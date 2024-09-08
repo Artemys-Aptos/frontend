@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import SearchBar from './SearchBar';
 import CreateChallengeModal from './modals/CreateChallengeModal';
+import WalletSelector from '@/helpers/WalletSelector';
 
 const ProfileNavbar = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -35,7 +36,7 @@ const ProfileNavbar = () => {
           {/* <MdOutlineNotificationsNone className="text-2xl text-white " /> */}
         </div>
         &nbsp;
-        <div className="absolute right-4">Connect Button</div>
+        <WalletSelector />
       </div>
       <CreateChallengeModal
         openMintModal={openModal}
