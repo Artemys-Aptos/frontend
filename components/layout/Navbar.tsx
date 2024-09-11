@@ -39,7 +39,7 @@ const Navbar = () => {
                 <SiBlockchaindotcom />
               </div>
               &nbsp;
-              <p className="text-white text-[25px] font-bold">Artemis</p>
+              <p className="text-white text-[25px] font-bold">Artemys</p>
             </Link>
 
             <a

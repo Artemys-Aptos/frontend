@@ -9,7 +9,7 @@ const ChallengesC: React.FC = () => {
     <>
       <div className="bg-black h-full">
         <Head>
-          <title>Challenges | Artemis AI</title>
+          <title>Challenges | Artemys AI</title>
           <meta name="description" content="Challenges page" />
         </Head>
         <div className="flex ">

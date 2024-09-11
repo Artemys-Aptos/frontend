@@ -3,53 +3,50 @@ import {
   APT_DECIMALS,
   dateToSeconds,
   convertAmountFromHumanReadableToOnChain,
-} from '../helpers';
+} from '@/utils/helpers';
 
-export type CreateCollectionArguments = {
-  collectionDescription: string;
-  collectionName: string;
-  projectUri: string;
+export type CreatePromptCollectionArguments = {
+  description: string;
+  name: string;
+  uri: string;
   maxSupply: number;
-  royaltyPercentage?: number;
   preMintAmount?: number;
-  publicMintStartDate: Date;
-  publicMintEndDate?: Date;
-  publicMintLimitPerAccount: number;
-  publicMintFeePerNFT: number;
+  publicMintStartTime: Date;
+  publicMintEndTime?: Date;
+  publicMintLimitPerAddr: number;
+  publicMintFeePerPrompt: number;
 };
 
-export const createCollection = (
-  args: CreateCollectionArguments
+export const createPromptCollection = (
+  args: CreatePromptCollectionArguments
 ): InputTransactionData => {
   const {
-    collectionDescription,
-    collectionName,
-    projectUri,
+    description,
+    name,
+    uri,
     maxSupply,
-    royaltyPercentage,
     preMintAmount,
-    publicMintStartDate,
-    publicMintEndDate,
-    publicMintLimitPerAccount,
-    publicMintFeePerNFT,
+    publicMintStartTime,
+    publicMintEndTime,
+    publicMintLimitPerAddr,
+    publicMintFeePerPrompt,
   } = args;
 
   return {
     data: {
-      function: `${process.env.NEXT_PUBLIC_MODULE_ADDRESS}::launchpad::create_collection`,
+      function: `${process.env.NEXT_PUBLIC_MODULE_ADDRESS}::prompt_marketplace::create_prompt_collection`,
       typeArguments: [],
       functionArguments: [
-        collectionDescription,
-        collectionName,
-        projectUri,
+        description,
+        name,
+        uri,
         maxSupply,
-        royaltyPercentage,
-        preMintAmount,
-        dateToSeconds(publicMintStartDate),
-        publicMintEndDate ? dateToSeconds(publicMintEndDate) : null,
-        publicMintLimitPerAccount,
+        preMintAmount !== undefined ? preMintAmount : null,
+        dateToSeconds(publicMintStartTime),
+        publicMintEndTime ? dateToSeconds(publicMintEndTime) : null,
+        publicMintLimitPerAddr,
         convertAmountFromHumanReadableToOnChain(
-          publicMintFeePerNFT,
+          publicMintFeePerPrompt,
           APT_DECIMALS
         ),
       ],

@@ -10,7 +10,7 @@ const Home = () => {
     <>
       <div className="bg-black h-full">
         <Head>
-          <title>Home | Artemis AI</title>
+          <title>Home | Artemys AI</title>
           <meta name="description" content="Home page" />
         </Head>
         <div className="flex ">

@@ -10,7 +10,7 @@ const Leaderboard = () => {
     <>
       <div className="bg-black h-full">
         <Head>
-          <title>Home | Artemis AI</title>
+          <title>Leaderboard | Artemys AI</title>
           <meta name="description" content="Home page" />
         </Head>
         <div className="flex ">

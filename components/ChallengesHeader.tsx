@@ -8,13 +8,13 @@ const ChallengesHeader = () => {
         Welcome To Challenges
       </h1>
       <p className="pb-6 pt-4 italic bg-transparent text-start  w-[60%] ml-10">
-        Artemis's Challenges are our official friendly competitions. Use them as
+        Artemys's Challenges are our official friendly competitions. Use them as
         an opportunity to get better at AI image generation!
         <br />
         <br /> Each week a new theme is proposed, images are submitted, and
         votes casted.
         {/* <br /> Our goal is to challenge and push the creative boundaries of all
-        the Artemis community! */}
+        the Artemys community! */}
       </p>
     </div>
   );

@@ -28,7 +28,7 @@ const GenerateSidebar = () => {
             <FaDiceD20 className="text-white text-[24px] " />
             &nbsp;&nbsp;
             <h2 className="font-extrabold text-[24px] leading-[30px] text-white">
-              Artemis{' '}
+              Artemys{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-purple-800">
                 AI
               </span>

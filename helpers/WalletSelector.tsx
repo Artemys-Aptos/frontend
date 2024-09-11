@@ -11,6 +11,7 @@ import {
 } from '@aptos-labs/wallet-adapter-react';
 import { toast } from 'react-toastify';
 import { ChevronDown, Copy, LogOut, User } from 'lucide-react';
+import GradientBorderButton from '@/components/button/GradientBorderButton';
 
 const APTOS_CONNECT_ACCOUNT_URL = 'https://aptosconnect.com/account';
 
@@ -24,7 +25,7 @@ export function WalletSelector() {
     if (connected && account) {
       setIsConnecting(false);
       setIsDialogOpen(false);
-      toast.success('Wallet connected successfully');
+    //   toast.success('Wallet connected successfully');
     } else if (connected && !account) {
       setIsConnecting(true);
     } else {
@@ -58,19 +59,19 @@ export function WalletSelector() {
     <>
       <div>
         {connected && account ? (
-          <button
+          <GradientBorderButton
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md"
+            // className="px-4 py-2 bg-blue-500 text-white rounded-md"
           >
             {account.ansName || truncateAddress(account.address) || 'Unknown'}
-          </button>
+          </GradientBorderButton>
         ) : (
           <button
             onClick={() => setIsDialogOpen(true)}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md"
+            className="px-4 py-2 border-[1px] border-purple-400 text-gray-200 rounded-md text-sm mr-4"
             disabled={isConnecting}
           >
-            {isConnecting ? 'Connecting...' : 'Connect a Wallet'}
+            {isConnecting ? 'Connecting...' : 'Connect Wallet'}
           </button>
         )}
       </div>
@@ -81,7 +82,7 @@ export function WalletSelector() {
             onClick={() => setIsDropdownOpen(false)}
           >
             <div
-              className="absolute right-4 top-16 w-48 bg-white rounded-md shadow-lg"
+              className="absolute right-[180px] top-[16px] w-48 bg-white rounded-md shadow-lg"
               onClick={(e) => e.stopPropagation()}
             >
               <button

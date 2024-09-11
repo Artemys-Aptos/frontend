@@ -18,7 +18,7 @@ const Generate = () => {
       <>
         <div className=" relative h-screen bg-black">
           <Head>
-            <title>Generate Image | Artemis AI</title>
+            <title>Generate Image | Artemys AI</title>
             <meta name="description" content="Home page" />
           </Head>
           <div className="flex">

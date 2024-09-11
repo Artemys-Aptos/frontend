@@ -11,7 +11,7 @@ const Home = () => {
   return (
     <div className="w-full">
       <Head>
-        <title>Artemis AI</title>
+        <title>Artemys AI</title>
         <meta name="description" content="Home page" />
       </Head>
       <div className="relative mx-auto bg-black">
