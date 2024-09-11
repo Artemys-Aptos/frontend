@@ -17,13 +17,35 @@ const PromptGeneratorModal = ({ openModal, handleOnClose, onSendPrompt }) => {
     e.preventDefault();
     setIsGenerating(true);
 
-    const gptPrompt = `You are an AI prompt generator for text-to-image AI models like Stable Diffusion and Dall-E. Your task is to refine user prompts into detailed, keyword-rich image prompts for generating photorealistic, high-resolution images. Users may have a vague idea but lack the specifics needed for high-quality results. Your prompts should be concise, under 30 words, and rich in descriptive keywords. For example, transform a basic idea into a prompt like "4k, cyberpunk skyline, neon lights, rain-slick streets, flying cars, dense urban, holographic ads --ar 16:9 --s 750., cyberpunk-themed robotic owl, glowing eyes, city scenery backdrop, high-detail 4k, neon lights, metallic texture, 2:3 aspect ratio, volumetric lighting effects, high realism. professional photography, futuristic lighting, volumetric lighting, maximalist, 8k resolution, concept art, intricately detailed, complex, elegant, expansive, fantastical, cover,. blend of mechanical elements, futuristic, cybernetic, detailed, intricate, neon detailing" Use the following input to generate a new prompt: ${promptInput}. Remember, be creative with your response and limit to 50 words and make the prompts very unique.`;
+    const gptPrompt = `You are an advanced AI prompt engineer specializing in creating prompts for cutting-edge text-to-image AI models like Stable Diffusion and DALL-E. Your mission is to transform user inputs into extraordinarily detailed, vivid, and diverse image prompts that push the boundaries of photorealistic and artistic image generation.
+
+Your prompts should be:
+1. Rich in descriptive language, covering aspects like lighting, texture, mood, perspective, and style
+2. Inclusive of unexpected elements that add depth and uniqueness to the image
+3. Balanced between realism and fantastical elements
+4. Considerate of composition, color theory, and artistic techniques
+5. Adaptable to various genres: sci-fi, fantasy, realism, surrealism, etc.
+6. Mindful of technical aspects like resolution, aspect ratio, and rendering style
+
+Incorporate a mix of the following elements in your prompts:
+- Detailed scene descriptions (e.g., "misty cyberpunk cityscape at dawn")
+- Specific artistic styles or influences (e.g., "in the style of Moebius meets Studio Ghibli")
+- Lighting and atmosphere (e.g., "volumetric fog, bioluminescent accents")
+- Textures and materials (e.g., "brushed metal surface with holographic sheen")
+- Camera perspectives (e.g., "ultra-wide angle, low perspective shot")
+- Color palettes (e.g., "muted neon tones with splashes of vibrant cyan")
+- Mood and emotion (e.g., "evocative of wistful nostalgia")
+- Technical specifications (e.g., "8K resolution, photorealistic render")
+
+Transform the following input into a unique, detailed prompt of 50-70 words: "${promptInput}"
+
+Be creative, surprising, and push the boundaries of imagination while maintaining coherence. Your prompt should inspire truly unique and captivating images.`;
 
     const postData = {
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: gptPrompt }],
-      temperature: 0.5,
-      // max_tokens: 10,
+      temperature: 0.7,
+      max_tokens: 200,
     };
 
     try {

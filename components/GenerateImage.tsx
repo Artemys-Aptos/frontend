@@ -41,20 +41,24 @@ const GenerateImage = () => {
     setPrompts(prompt);
   };
 
-  const handleGenerateImages = async (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleGenerateImages = async (
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => {
     e.preventDefault();
-  
+
     setIsGenerating(true);
-  
+
     try {
-      const data = await useStableDiffusion(receivedPrompt);
-  
+      const data = await useStableDiffusion(receivedPrompt, {
+        aspect_ratio: '1:1',
+      });
+
       if (data && data.artifacts) {
         const imageObjects: ImageObject[] = data.artifacts.map((artifact) => ({
           id: artifact.id,
-          base64: artifact.base64
+          base64: artifact.base64,
         }));
-  
+
         setImages(imageObjects);
         console.log('Image Objects', imageObjects);
       }

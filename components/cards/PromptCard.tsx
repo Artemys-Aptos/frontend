@@ -13,12 +13,10 @@ const getRandomWord = () => {
   return words[randomIndex];
 };
 
-const PromptCard = ({ tokenId, img, name, prompt, chainAddress, creator }) => {
+const PromptCard = ({ img, name, prompt, creator, price }) => {
   const [openModal, setOpenModal] = useState(false);
   const [tokenPrice, setTokenPrice] = useState();
   const [isPriceLoaded, setIsPriceLoaded] = useState(false);
-
-  console.log(tokenId);
 
   const handleOpenModal = () => {
     setOpenModal(true);
@@ -43,7 +41,7 @@ const PromptCard = ({ tokenId, img, name, prompt, chainAddress, creator }) => {
           <div className="w-full">
             <div>
               <img
-                src="/shardeum.png"
+                src="https://s2.coinmarketcap.com/static/img/coins/200x200/21794.png"
                 alt=""
                 className="w-[34px] h-[35px] p-1 absolute top-4 right-3 bg-white/80 rounded-2xl"
               />
@@ -79,7 +77,7 @@ const PromptCard = ({ tokenId, img, name, prompt, chainAddress, creator }) => {
               <div className="flex flex-col w-full px-2 ">
                 <p>Price:</p>
                 <p className="flex items-center text-sm">
-                  <span>SHM</span>
+                  <span>{price} APT</span>
                 </p>
               </div>
               <div className="flex flex-col">
@@ -90,7 +88,7 @@ const PromptCard = ({ tokenId, img, name, prompt, chainAddress, creator }) => {
           </div>
         </div>
       </div>
-      <PromptPremiumDetails
+      {/* <PromptPremiumDetails
         openMintModal={openModal}
         handleOnClose={() => setOpenModal(false)}
         image={img}
@@ -99,7 +97,7 @@ const PromptCard = ({ tokenId, img, name, prompt, chainAddress, creator }) => {
         price={tokenPrice}
         prompt={prompt}
         creator={creator}
-      />
+      /> */}
     </div>
   );
 };

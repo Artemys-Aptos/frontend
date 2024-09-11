@@ -6,7 +6,7 @@ import MarketplaceTab from './tab/MarketplaceTab';
 import MarketplaceHeader from './MarketplaceHeader';
 import axios from 'axios';
 import PromptCardSkeleton from './skeleton/PromptCardSkeleton';
-import { useGetNft } from '@/hooks/useGetNft';
+import { useQuery } from '@tanstack/react-query';
 
 interface Attribute {
   trait_type: string;
@@ -22,62 +22,26 @@ interface NFT {
   attributes: Attribute[];
 }
 
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
 const MarketplaceC = () => {
-  const [listedNFTs, setListedNFTs] = useState<NFT[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { nfts } = useGetNft();
-
-  console.log(nfts);
-
-  const getAttributeValue = (
-    attributes: Attribute[],
-    traitType: string
-  ): string => {
-    const attribute = attributes.find((attr) => attr.trait_type === traitType);
-    return attribute ? attribute.value : '';
+  const fetchPremiumPrompts = async (): Promise<PremiumPrompt[]> => {
+    const response = await axios.get(
+      `${BASE_URL}/marketplace/get-premium-prompts/?page=1&page_size=20`
+    );
+    return response.data.prompts;
   };
 
-  const fetchIPFSMetadata = async (ipfsUri: string) => {
-    try {
-      const url = ipfsUri.replace(
-        'ipfs://',
-        'https://gateway.pinata.cloud/ipfs/'
-      );
-      const response = await axios.get(url);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching IPFS metadata:', error);
-      return null;
-    }
-  };
+  const {
+    data: premiumPrompts,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['premiumPrompts'],
+    queryFn: fetchPremiumPrompts,
+  });
 
-  // const fetchNftsData = async () => {
-  //   setIsLoading(true);
-  //   const promises = nfts.map(async (nft) => {
-  //     const metadata = await fetchIPFSMetadata(nft.tokenUri);
-  //     if (metadata) {
-  //       const typeAttribute = metadata.attributes?.find(
-  //         (attr) => attr.trait_type === 'type'
-  //       );
-  //       if (typeAttribute && typeAttribute.value === 'premium') {
-  //         return {
-  //           metadata_url: nft.tokenUri,
-  //           image_url: metadata.image,
-  //           name: metadata.name,
-  //           prompts: metadata.attributes?.find(
-  //             (attr) => attr.trait_type === 'prompts'
-  //           )?.value,
-  //           identifier: nft.id,
-  //           attributes: metadata.attributes,
-  //         };
-  //       }
-  //     }
-  //     return null;
-  //   });
-  //   const results = (await Promise.all(promises)).filter((nft) => nft !== null);
-  //   setListedNFTs(results);
-  //   setIsLoading(false);
-  // };
+  console.log('premium prompts', premiumPrompts);
 
   return (
     <>
@@ -89,13 +53,13 @@ const MarketplaceC = () => {
             Chain:
           </p>
           &nbsp; &nbsp; &nbsp;
-          <p className="font-bold flex items-center py-1 px-3 rounded-xl border border-gray-300 cursor-pointer">
+          <p className="font-bold flex items-center text-xs px-3 rounded-xl border border-gray-300 cursor-pointer">
             <img
-              src="/shardeum.png"
+              src="https://s2.coinmarketcap.com/static/img/coins/200x200/21794.png"
               alt=""
-              className="w-[34px] h-[35px] p-1  rounded-2xl"
+              className="w-[28px] h-[28px] p-1  rounded-2xl"
             />
-            Shardeum
+            Aptos
           </p>
         </div>
       </div>
@@ -104,15 +68,13 @@ const MarketplaceC = () => {
           ? Array.from({ length: 10 }).map((_, index) => (
               <PromptCardSkeleton key={index} />
             ))
-          : listedNFTs.map((nft, index) => (
+          : premiumPrompts?.map((prompt, index) => (
               <PromptCard
                 key={index}
-                tokenId={nft.identifier}
-                img={nft.image_url}
-                name={nft.name}
-                prompt={nft.prompts}
-                chainAddress={nft.metadata_url}
-                creator={getAttributeValue(nft.attributes, 'creator')}
+                img={prompt.ipfs_image_url}
+                name={prompt.collection_name}
+                creator={prompt.account_address}
+                price={prompt.prompt_nft_price}
               />
             ))}
       </div>

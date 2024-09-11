@@ -180,7 +180,7 @@ const PromptFreeDetails = ({
                             Chain
                           </h1>
                           <p className="text-[14px] font-bold">
-                            Shardeum Testnet
+                            Aptos Testnet
                           </p>
                         </div>
                         <div>
