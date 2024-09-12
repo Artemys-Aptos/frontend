@@ -3,7 +3,6 @@ import Masonry, { ResponsiveMasonry } from 'react-responsive-masonry';
 import axios from 'axios';
 import ImageCard from './cards/ImageCard';
 import ImageSkeleton from './skeleton/ImageSkeleton';
-import { useGetNft } from '@/hooks/useGetNft';
 
 interface NFT {
   metadata_url: string;
@@ -36,11 +35,9 @@ const ExploreMasonry = () => {
   const API_URL = process.env.NEXT_PUBLIC_RPC_LINK;
   const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  const { nfts } = useGetNft();
-
   useEffect(() => {
     fetchPublicPrompts();
-  }, [nfts]);
+  }, []);
 
   const skeletonItems = Array.from({ length: 10 }).map((_, index) => (
     <ImageSkeleton key={index} index={index} />

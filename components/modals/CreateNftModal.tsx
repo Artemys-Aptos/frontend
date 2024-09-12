@@ -12,7 +12,6 @@ import { useImages } from '@/context/ImageContext';
 import { encryptPrompt } from '@/utils/encryptPrompt';
 import generateKey from '@/utils/generateKey';
 import axios from 'axios';
-import { useAddNft } from '@/hooks/useAddNft';
 import { createPromptCollection } from '@/utils/entry-functions/create_collection';
 import { aptosClient } from '@/utils/aptos/aptosClient';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
