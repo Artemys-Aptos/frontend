@@ -16,10 +16,13 @@ import { useAddNft } from '@/hooks/useAddNft';
 import { createPromptCollection } from '@/utils/entry-functions/create_collection';
 import { aptosClient } from '@/utils/aptos/aptosClient';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { AptosClient, TxnBuilderTypes, BCS, HexString, Provider } from 'aptos';
 
 const CreateNftModal = ({ openModal, handleOnClose, image }) => {
   const { addNFT } = useAddNft();
-  const { account, signAndSubmitTransaction } = useWallet();
+  const { signAndSubmitTransaction, account, network } = useWallet();
+  console.log(network);
+
   const { prompts } = useImages();
   const address = account?.address || '';
   const [promptNftName, setPromptNftName] = useState('');
@@ -48,6 +51,11 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
 
   const createPromptNFT = async (e) => {
     e.preventDefault();
+
+    if (!account || !window.petra || account.address === null) {
+      toast.error('Please connect your Petra wallet first');
+      return;
+    }
 
     let base64String = image;
     let imageType = 'image/jpeg';
@@ -122,30 +130,67 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
 
       const currentTime = new Date();
 
-      const response = await signAndSubmitTransaction(
-        createPromptCollection({
-          description: promptNftDescription,
-          name: promptNftName,
-          uri: metadataUrl,
-          maxSupply: maxSupply,
-          preMintAmount: 1,
-          publicMintStartTime: currentTime,
-          publicMintEndTime: null,
-          publicMintLimitPerAddr: 1,
-          publicMintFeePerPrompt: publicMintFeePerNFT,
-        })
+      const payload = createPromptCollection({
+        description: promptNftDescription,
+        name: promptNftName,
+        uri: metadataUrl,
+        maxSupply: maxSupply,
+        preMintAmount: 1,
+        publicMintStartTime: currentTime,
+        publicMintEndTime: null,
+        publicMintLimitPerAddr: 1,
+        publicMintFeePerPrompt: publicMintFeePerNFT,
+      });
+
+      const provider = new Provider(network.name);
+      const feePayerTransaction = await provider.generateFeePayerTransaction(
+        account.address,
+        payload,
+        process.env.NEXT_PUBLIC_FEE_PAYER_ADDRESS!
       );
 
-      console.log('Transaction response:', response);
+      const petra = window.petra;
+      const publicKey = HexString.ensure(account.publicKey);
+      const signedTransaction = await petra.signMultiAgentTransaction(
+        feePayerTransaction
+      );
 
-      const committedTransactionResponse =
-        await aptosClient().waitForTransaction({
-          transactionHash: response.hash,
-        });
+      const senderAuth = new TxnBuilderTypes.AccountAuthenticatorEd25519(
+        new TxnBuilderTypes.Ed25519PublicKey(publicKey.toUint8Array()),
+        new TxnBuilderTypes.Ed25519Signature(signedTransaction)
+      );
 
-      console.log('committedTransaction', committedTransactionResponse);
+      const serializer = new BCS.Serializer();
+      feePayerTransaction.serialize(serializer);
+      senderAuth.serialize(serializer);
+      const serializedBytes = serializer.getBytes();
+      const hexData = HexString.fromUint8Array(serializedBytes).toString();
 
-      if (committedTransactionResponse.success) {
+      const response = await axios.post('/api/sponsor-transaction', {
+        serializedData: hexData,
+        network: network.name,
+      });
+
+      if (response.data.hash) {
+        setTxHash(response.data.hash);
+        // toast.update(mintNotification, {
+        //   render: 'Creation Completed Successfully',
+        //   type: 'success',
+        //   isLoading: false,
+        //   autoClose: 7000,
+        // });
+        setCompletedMint(true);
+      } else {
+        throw new Error('Failed to submit sponsored transaction');
+      }
+      // const committedTransactionResponse =
+      //   await aptosClient().waitForTransaction({
+      //     transactionHash: response.hash,
+      //   });
+
+      // console.log('committedTransaction', committedTransactionResponse);
+
+      if (response.data.hash) {
         if (isSwitchEnabled) {
           await axios.post(
             'https://deep-zitella-artemys-846660d9.koyeb.app/marketplace/add-premium-prompts/',
@@ -156,7 +201,7 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
               account_address: address,
               collection_name: promptNftName,
               max_supply: maxSupply,
-              prompt_tag: "3D Art",
+              prompt_tag: '3D Art',
               prompt_nft_price: publicMintFeePerNFT,
             }
           );
@@ -184,13 +229,20 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
 
       setPromptNftName('');
       setPromptNftDescription('');
-      setMaxSupply(3000);
+      setMaxSupply(1);
       setPublicMintFeePerNFT(0.1);
       setCompletedMint(true);
       setTxHash(response.hash);
     } catch (error) {
       console.error('Error in the overall NFT creation process:', error);
       toast.error(`Error: ${error.message}`);
+    } finally {
+      // toast.update(mintNotification, {
+      //   render: '',
+      //   type: 'success',
+      //   isLoading: false,
+      //   autoClose: 7000,
+      // });
     }
   };
 
