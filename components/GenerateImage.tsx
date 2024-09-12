@@ -49,12 +49,15 @@ const GenerateImage = () => {
     setIsGenerating(true);
 
     try {
-      const data = await useStableDiffusion(receivedPrompt, 4);
+      const data = await useStableDiffusion(receivedPrompt, {
+        aspect_ratio: '1:1',
+      });
 
       if (data && data.artifacts) {
-        const imageObjects: ImageObject[] = data.artifacts
-          .filter((artifact) => artifact.base64)
-          .map((artifact, index) => ({ id: index, base64: artifact.base64 }));
+        const imageObjects: ImageObject[] = data.artifacts.map((artifact) => ({
+          id: artifact.id,
+          base64: artifact.base64,
+        }));
 
         setImages(imageObjects);
         console.log('Image Objects', imageObjects);

@@ -2,7 +2,7 @@ import React from 'react';
 
 const SearchBar = () => {
   return (
-    <div className="bg-transparent w-[500px] mr-[240px] absolute top-[4px] left-[50px]">
+    <div className="bg-transparent w-[500px] mr-[240px] absolute top-[4px] left-[5px]">
       <form className="pt-2 px-[10px] bg-transparent">
         <label
           htmlFor="default-search"
@@ -38,7 +38,7 @@ const SearchBar = () => {
           <div>
             <button
               type="submit"
-              className="text-white absolute right-[1px] bottom-[1px] bg-primer font-bold hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300 rounded-lg text-sm px-4 py-2  dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800"
+              className="text-white absolute right-[1px] bottom-[1px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 shadow text-white font-bold hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300 rounded-lg text-sm px-4 py-2  dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800"
             >
               Search
             </button>

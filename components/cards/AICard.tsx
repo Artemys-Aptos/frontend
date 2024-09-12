@@ -13,7 +13,7 @@ const AICard = ({ image, model }) => {
           objectFit="cover"
           className="rex"
         />
-        <div className="absolute inset-0 bg-black opacity-30" />
+        <div className="absolute inset-0 bg-black opacity-40" />
       </div>
       <p className="text-white bg- absolute top-[220px] ml-[20px] bg-black/50 p-2 rounded-xl font-bold">
         {model}

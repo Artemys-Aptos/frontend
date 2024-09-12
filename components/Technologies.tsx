@@ -7,12 +7,12 @@ const Technologies = () => {
         <li>Powered By:</li>
         <li className="flex items-center">
           <img
-            src="/shardeum.png"
+            src="https://s2.coinmarketcap.com/static/img/coins/200x200/21794.png"
             alt=""
             className="w-[27px] h-[27px] rounded-full"
           />
           &nbsp;
-          <p className="text-md">Shardeum</p>
+          <p className="text-md">Aptos</p>
         </li>
         {/* <li className="flex items-center">
           <img src="zora.png" alt="" className="w-[27px]" />

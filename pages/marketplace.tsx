@@ -11,7 +11,7 @@ const Marketplace = () => {
     <>
       <div className=" h-full bg-black">
         <Head>
-          <title>Marketplace | Artemis AI</title>
+          <title>Marketplace | Artemys AI</title>
           <meta name="description" content="Home page" />
         </Head>
         <div className="flex ">

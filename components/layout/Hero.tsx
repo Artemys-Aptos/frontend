@@ -11,11 +11,11 @@ const Hero = () => {
           <span className="text-transparent bg-clip-text bg-primer">
             Unleash Your Creativity
           </span>{' '}
-          with Artemis Generative AI
+          with Artemys Generative AI
         </p>
         <p className="max-w-[936px] text-center mt-3 sm:mt-4 text-base sm:text-xl text-gray-400 font-normal transition-all">
           Transform your prompts into digital masterpieces, convert them into
-          NFTs, and sell on our marketplace. With Artemis, your creativity holds
+          NFTs, and sell on our marketplace. With Artemys, your creativity holds
           real value.
         </p>
         <button

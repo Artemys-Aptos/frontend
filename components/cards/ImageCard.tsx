@@ -2,6 +2,13 @@
 import React, { useState } from 'react';
 import PromptFreeDetails from '../modals/PromptFreeDetails';
 
+const truncatePrompt = (prompt, maxLength = 200) => {
+  if (prompt && prompt.length > maxLength) {
+    return prompt.substring(0, maxLength) + '...';
+  }
+  return prompt;
+};
+
 const ImageCard = ({ index, imageUrl, name, prompt }) => {
   const [openModal, setOpenModal] = useState(false);
 
@@ -15,7 +22,7 @@ const ImageCard = ({ index, imageUrl, name, prompt }) => {
       height = 'h-[400px]';
       break;
     case 1:
-      height = 'h-[360px]';
+      height = 'h-[250px]';
       break;
     case 2:
       height = 'h-[420px]';
@@ -26,6 +33,8 @@ const ImageCard = ({ index, imageUrl, name, prompt }) => {
     default:
       height = 'h-[600px]';
   }
+
+  const truncatedPrompt = truncatePrompt(prompt);
 
   return (
     <>
@@ -39,9 +48,7 @@ const ImageCard = ({ index, imageUrl, name, prompt }) => {
         <div className="overlay absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
         <div className="absolute bottom-2 left-2  rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <span className="text-gray-300 text-sm">
-            {prompt}
-          </span>
+          <span className="text-gray-300 text-sm">{truncatedPrompt}</span>
         </div>
 
         <div className="like-button absolute top-2 right-2 rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">

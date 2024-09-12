@@ -21,7 +21,7 @@ const Sidebar = () => {
   return (
     <>
       <nav
-        className="hidden custom-scrollbar fixed top-0 left-0 bg-black shadow-2xl items-center h-screen w-[210px] right-0 navbar mt-0 md:block border-r-[1px] border-gray-600"
+        className="hidden custom-scrollbar fixed top-0 left-0 bg-black shadow-2xl items-center h-screen w-[210px] right-0 navbar mt-0 md:block border-r-[1px] border-gray-800"
         style={{ maxWidth: '100vw', overflowX: 'auto' }}
         aria-label="Sidebar"
       >
@@ -29,7 +29,7 @@ const Sidebar = () => {
           <FaDiceD20 className="text-white text-[24px] " />
           &nbsp;&nbsp;
           <h2 className="font-extrabold text-[24px] leading-[30px] text-white">
-            Artemis{' '}
+            Artemys{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-purple-800">
               AI
             </span>

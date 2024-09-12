@@ -1,11 +1,19 @@
 import '@/styles/globals.css';
 import type { AppProps } from 'next/app';
 import { ImageProvider } from '@/context/ImageContext';
+import { WalletProvider } from '@/helpers/WalletProvider';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <ImageProvider>
-      <Component {...pageProps} />
-    </ImageProvider>
+    <QueryClientProvider client={queryClient}>
+      <WalletProvider>
+        <ImageProvider>
+          <Component {...pageProps} />
+        </ImageProvider>
+      </WalletProvider>
+    </QueryClientProvider>
   );
 }

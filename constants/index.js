@@ -71,3 +71,8 @@ export const startingFeatures = [
   'AI-guided image prompt generation: Effortlessly craft detailed prompts, enhance creativity, intuitive suggestions.',
   'Prompt Marketplace: Diverse library of creative prompts, user-contributed content for enhanced creativity.',
 ];
+
+export const NETWORK = process.env.NEXT_PUBLIC_APP_NETWORK ?? 'testnet';
+export const MODULE_ADDRESS = process.env.NEXT_PUBLIC_MODULE_ADDRESS;
+export const CREATOR_ADDRESS = process.env.NEXT_PUBLIC_CREATOR_ADDRESS;
+export const IS_DEV = Boolean(process.env.DEV);

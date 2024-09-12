@@ -39,30 +39,16 @@ const Navbar = () => {
                 <SiBlockchaindotcom />
               </div>
               &nbsp;
-              <p className="text-white text-[25px] font-bold">Artemis</p>
+              <p className="text-white text-[25px] font-bold">Artemys</p>
             </Link>
-            <div className="hidden sm:flex items-center w-full justify-center transition-all">
-              <div className="flex sm:space-x-4 md:space-x-10 justify-center text-white transition-all">
-                <button type="button" className="text-base font-normal">
-                  Home
-                </button>
-                <Link href="/">
-                  <button type="button" className="text-base font-normal">
-                    Explore
-                  </button>
-                </Link>
-                <button type="button" className="text-base font-normal">
-                  Community
-                </button>
-              </div>
-            </div>
+
             <a
               target="_blank"
               href="/home"
               className="flex mr-[calc(24px+16px)] sm:mr-0 justify-center space-x-2 items-center bg-black text-white border-primer rounded-lg px-[1.5rem] text-base font-bold h-10 sm:h-12 min-w-[105px] sm:min-w-[140px] transition-all"
               rel="noreferrer"
             >
-              <span>Connect</span>
+              <span>Get Started</span>
               <svg
                 width="16"
                 height="16"

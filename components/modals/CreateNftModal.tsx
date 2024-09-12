@@ -2,7 +2,7 @@
 // @ts-nocheck
 import { Dialog, Transition } from '@headlessui/react';
 import Link from 'next/link';
-import { Fragment, useEffect, useState, useCallback } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import DestinationChain from '../ai-params/DestinationChain';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -12,27 +12,29 @@ import { useImages } from '@/context/ImageContext';
 import { encryptPrompt } from '@/utils/encryptPrompt';
 import generateKey from '@/utils/generateKey';
 import axios from 'axios';
-import { useNFTCreatedListener } from '@/hooks/useNFTCreatedListener';
-import { useAddNft } from '@/hooks/useAddNft';
+import { createPromptCollection } from '@/utils/entry-functions/create_collection';
+import { aptosClient } from '@/utils/aptos/aptosClient';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { AptosClient, TxnBuilderTypes, BCS, HexString, Provider } from 'aptos';
 
 const CreateNftModal = ({ openModal, handleOnClose, image }) => {
   const { addNFT } = useAddNft();
+  const { signAndSubmitTransaction, account, network } = useWallet();
+  console.log(network);
+
   const { prompts } = useImages();
-  const { ethereum } = window || {};
+  const address = account?.address || '';
   const [promptNftName, setPromptNftName] = useState('');
   const [promptNftDescription, setPromptNftDescription] = useState('');
-  const [attr, setAttr] = useState(
-    JSON.stringify([
-      { trait_type: 'model', value: 'Stable Diffusion XL' },
-      { trait_type: 'creator', value: '' },
-      { trait_type: 'chain', value: '' },
-      { trait_type: 'prompts', value: '' },
-      { trait_type: 'type', value: '' },
-    ])
-  );
-  const [extUrl, setExtUrl] = useState('https://www.artemis.ai');
+  const [attr, setAttr] = useState([
+    { trait_type: 'model', value: 'Stable Diffusion XL' },
+    { trait_type: 'creator', value: '' },
+    { trait_type: 'chain', value: '' },
+    { trait_type: 'prompts', value: '' },
+    { trait_type: 'type', value: '' },
+  ]);
   const [maxSupply, setMaxSupply] = useState(3000);
-  const [price, setNftPrice] = useState(0);
+  const [publicMintFeePerNFT, setPublicMintFeePerNFT] = useState(0.1);
   const [txHash, setTxHash] = useState('');
   const [isSwitchEnabled, setIsSwitchEnabled] = useState(false);
   const [completedMint, setCompletedMint] = useState(false);
@@ -46,11 +48,11 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
     setCompletedMint(false);
   };
 
-  const CreatePromptNFT = async (e) => {
+  const createPromptNFT = async (e) => {
     e.preventDefault();
 
-    if (!ethereum) {
-      console.error('Ethereum object not found');
+    if (!account || !window.petra || account.address === null) {
+      toast.error('Please connect your Petra wallet first');
       return;
     }
 
@@ -66,24 +68,13 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
       promptValue = prompts;
     }
 
-    let parsedAttr = JSON.parse(attr);
-    parsedAttr[3].value = promptValue;
-    parsedAttr[2].value = 'Aptos';
-    parsedAttr[1].value = address;
+    let updatedAttr = [...attr];
+    updatedAttr[3].value = promptValue;
+    updatedAttr[2].value = 'Aptos';
+    updatedAttr[1].value = address;
+    updatedAttr[4].value = isSwitchEnabled ? 'premium' : 'public';
 
-    const typeIndex = parsedAttr.findIndex(
-      (a: { trait_type: string }) => a.trait_type === 'type'
-    );
-    if (typeIndex !== -1) {
-      parsedAttr[typeIndex].value = isSwitchEnabled ? 'premium' : 'public';
-    } else {
-      parsedAttr.push({
-        trait_type: 'type',
-        value: isSwitchEnabled ? 'premium' : 'public',
-      });
-    }
-
-    setAttr(JSON.stringify(parsedAttr));
+    setAttr(updatedAttr);
 
     try {
       const mintNotification = toast.loading(
@@ -111,7 +102,7 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
         name: promptNftName,
         description: promptNftDescription,
         image: imageUrl,
-        attributes: parsedAttr,
+        attributes: updatedAttr,
       };
 
       const jsonBlob = new Blob([JSON.stringify(metadata)], {
@@ -136,8 +127,97 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
 
       const metadataUrl = `https://gateway.pinata.cloud/ipfs/${metadataPinataResponse.data.IpfsHash}`;
 
-      const usdPrice = isSwitchEnabled ? price : '0';
-      const supply = isSwitchEnabled ? maxSupply : 1;
+      const currentTime = new Date();
+
+      const payload = createPromptCollection({
+        description: promptNftDescription,
+        name: promptNftName,
+        uri: metadataUrl,
+        maxSupply: maxSupply,
+        preMintAmount: 1,
+        publicMintStartTime: currentTime,
+        publicMintEndTime: null,
+        publicMintLimitPerAddr: 1,
+        publicMintFeePerPrompt: publicMintFeePerNFT,
+      });
+
+      const provider = new Provider(network.name);
+      const feePayerTransaction = await provider.generateFeePayerTransaction(
+        account.address,
+        payload,
+        process.env.NEXT_PUBLIC_FEE_PAYER_ADDRESS!
+      );
+
+      const petra = window.petra;
+      const publicKey = HexString.ensure(account.publicKey);
+      const signedTransaction = await petra.signMultiAgentTransaction(
+        feePayerTransaction
+      );
+
+      const senderAuth = new TxnBuilderTypes.AccountAuthenticatorEd25519(
+        new TxnBuilderTypes.Ed25519PublicKey(publicKey.toUint8Array()),
+        new TxnBuilderTypes.Ed25519Signature(signedTransaction)
+      );
+
+      const serializer = new BCS.Serializer();
+      feePayerTransaction.serialize(serializer);
+      senderAuth.serialize(serializer);
+      const serializedBytes = serializer.getBytes();
+      const hexData = HexString.fromUint8Array(serializedBytes).toString();
+
+      const response = await axios.post('/api/sponsor-transaction', {
+        serializedData: hexData,
+        network: network.name,
+      });
+
+      if (response.data.hash) {
+        setTxHash(response.data.hash);
+        // toast.update(mintNotification, {
+        //   render: 'Creation Completed Successfully',
+        //   type: 'success',
+        //   isLoading: false,
+        //   autoClose: 7000,
+        // });
+        setCompletedMint(true);
+      } else {
+        throw new Error('Failed to submit sponsored transaction');
+      }
+      // const committedTransactionResponse =
+      //   await aptosClient().waitForTransaction({
+      //     transactionHash: response.hash,
+      //   });
+
+      // console.log('committedTransaction', committedTransactionResponse);
+
+      if (response.data.hash) {
+        if (isSwitchEnabled) {
+          await axios.post(
+            'https://deep-zitella-artemys-846660d9.koyeb.app/marketplace/add-premium-prompts/',
+            {
+              ipfs_image_url: imageUrl,
+              prompt: promptValue,
+              post_name: promptNftName,
+              account_address: address,
+              collection_name: promptNftName,
+              max_supply: maxSupply,
+              prompt_tag: '3D Art',
+              prompt_nft_price: publicMintFeePerNFT,
+            }
+          );
+        } else {
+          await axios.post(
+            `https://deep-zitella-artemys-846660d9.koyeb.app/prompts/add-public-prompts/`,
+            {
+              ipfs_image_url: imageUrl,
+              prompt: promptValue,
+              account_address: address,
+              post_name: promptNftName,
+              public: true,
+              prompt_tag: '3D Art',
+            }
+          );
+        }
+      }
 
       toast.update(mintNotification, {
         render: 'Creation Completed Successfully',
@@ -148,19 +228,27 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
 
       setPromptNftName('');
       setPromptNftDescription('');
-      setMaxSupply('');
-      setNftPrice('');
+      setMaxSupply(1);
+      setPublicMintFeePerNFT(0.1);
       setCompletedMint(true);
+      setTxHash(response.hash);
     } catch (error) {
       console.error('Error in the overall NFT creation process:', error);
       toast.error(`Error: ${error.message}`);
+    } finally {
+      // toast.update(mintNotification, {
+      //   render: '',
+      //   type: 'success',
+      //   isLoading: false,
+      //   autoClose: 7000,
+      // });
     }
   };
 
   useEffect(() => {
     if (!isSwitchEnabled) {
       setMaxSupply(1);
-      setNftPrice(0);
+      setPublicMintFeePerNFT(0);
     }
   }, [isSwitchEnabled]);
 
@@ -294,7 +382,10 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
                                 min="1"
                                 max="50000"
                                 className="px-4 w-[60%] bg-transparent py-2 border border-gray-500 rounded-md focus:outline-none focus:ring focus:border-purple-600"
-                                onChange={(e) => setMaxSupply(e.target.value)}
+                                value={maxSupply}
+                                onChange={(e) =>
+                                  setMaxSupply(Number(e.target.value))
+                                }
                               />
                             </div>
                           )}
@@ -311,13 +402,17 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
                                 min="1"
                                 step="1"
                                 className="px-6 bg-transparent py-2 border border-gray-500 rounded-md focus:outline-none focus:ring focus:border-purple-500"
-                                onChange={(e) => setNftPrice(e.target.value)}
+                                value={publicMintFeePerNFT}
+                                onChange={(e) =>
+                                  setPublicMintFeePerNFT(Number(e.target.value))
+                                }
                               />
                             </div>
                           )}
 
                           <button
                             type="submit"
+                            onClick={createPromptNFT}
                             className="text-white  bg-gradient-to-r from-purple-700 via-purple-500 to-pink-500 mt-3 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300  rounded-lg text-sm font-bold w-[140px] sm:w-auto px-8 py-2 text-center dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-800"
                           >
                             Create
