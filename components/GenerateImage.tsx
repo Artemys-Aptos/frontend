@@ -9,6 +9,7 @@ import { ScaleLoader } from 'react-spinners';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import useStableDiffusion from '@/services/useStableDiffusion';
+import Tags from './ai-params/Tags';
 
 interface Artifact {
   base64: string;
@@ -28,7 +29,6 @@ const GenerateImage = () => {
 
   const handleOpenModal = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-
     setOpenModal(true);
   };
 
@@ -38,6 +38,7 @@ const GenerateImage = () => {
 
   const handleResponse = (prompt: string) => {
     setReceivedPrompt(prompt);
+    setEditablePromptInput(prompt);
     setPrompts(prompt);
   };
 
@@ -49,7 +50,7 @@ const GenerateImage = () => {
     setIsGenerating(true);
 
     try {
-      const data = await useStableDiffusion(receivedPrompt, {
+      const data = await useStableDiffusion(editablePromptInput, {
         aspect_ratio: '1:1',
       });
 
@@ -79,7 +80,9 @@ const GenerateImage = () => {
   };
 
   useEffect(() => {
-    setEditablePromptInput(receivedPrompt);
+    if (receivedPrompt && !editablePromptInput) {
+      setEditablePromptInput(receivedPrompt);
+    }
   }, [receivedPrompt]);
 
   return (
@@ -90,11 +93,6 @@ const GenerateImage = () => {
             htmlFor="success"
             className="block mb-2 text-sm font-medium text-white dark:text-green-500"
           >
-            {/* <span className="text-2xl text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 font-bold mb-8">
-              Image Generation
-            </span>
-            <br />
-            <br /> */}
             <div>
               <span className="text-xl font-bold mt-4">
                 Describe your Image
@@ -109,15 +107,11 @@ const GenerateImage = () => {
               </button>
             </div>
           </label>
-          {/* 
-          <FaDiceFive className="text-white text-2xl" /> */}
 
           <textarea
-            // type="text"
             id="success"
-            // onChange={handleChange}
             className="bg-[#0b0f172d] border border-gray-500 text-gray-200 dark:text-gray-400 placeholder-gray-700 dark:placeholder-gray-500 text-sm rounded-lg focus:ring-gray-300 focus:border-gray-300 focus:outline-none block w-[100%] p-2.5 dark:bg-gray-700 dark:border-gray-500"
-            placeholder="Creating awesomeness"
+            placeholder="Enter your prompt or modify the received prompt"
             value={editablePromptInput}
             onChange={(e) => setEditablePromptInput(e.target.value)}
           />
@@ -126,12 +120,7 @@ const GenerateImage = () => {
         <div className="text-center w-[80px] mt-[30px]">
           {isGenerating ? (
             <div className="w-[100px]  bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:bg-purple-800 rounded-lg">
-              <ScaleLoader
-                color="#f0f0f0"
-                // size="50px"
-                height="40px"
-                width="4px"
-              />
+              <ScaleLoader color="#f0f0f0" height="40px" width="4px" />
             </div>
           ) : (
             <button
@@ -145,6 +134,7 @@ const GenerateImage = () => {
         </div>
       </form>
 
+      {/* Rest of the component remains unchanged */}
       <div className="flex ml-[285px] gap-4">
         <div className=" w-[230px]">
           <AIModels />
@@ -153,7 +143,7 @@ const GenerateImage = () => {
           <StylePreset />
         </div>
         <div className=" w-[230px]">
-          <AIModels />
+          <Tags />
         </div>
       </div>
 

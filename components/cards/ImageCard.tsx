@@ -1,6 +1,7 @@
-// @ts-nocheck
 import React, { useState } from 'react';
 import PromptFreeDetails from '../modals/PromptFreeDetails';
+import { FaHeart } from 'react-icons/fa6';
+import { HiOutlineHeart } from 'react-icons/hi';
 
 const truncatePrompt = (prompt, maxLength = 200) => {
   if (prompt && prompt.length > maxLength) {
@@ -11,9 +12,15 @@ const truncatePrompt = (prompt, maxLength = 200) => {
 
 const ImageCard = ({ index, imageUrl, name, prompt }) => {
   const [openModal, setOpenModal] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
 
   const handleOpenModal = () => {
     setOpenModal(true);
+  };
+
+  const handleLikeClick = (e) => {
+    e.stopPropagation();
+    setIsLiked(!isLiked);
   };
 
   let height;
@@ -47,12 +54,19 @@ const ImageCard = ({ index, imageUrl, name, prompt }) => {
       >
         <div className="overlay absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-        <div className="absolute bottom-2 left-2  rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute bottom-2 left-2 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <span className="text-gray-300 text-sm">{truncatedPrompt}</span>
         </div>
 
-        <div className="like-button absolute top-2 right-2 rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
-          ❤️
+        <div
+          className="like-button absolute top-2 right-2 rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer pointer-events-auto"
+          onClick={handleLikeClick}
+        >
+          {isLiked ? (
+            <FaHeart className="w-5 h-5 text-red-500" />
+          ) : (
+            <HiOutlineHeart className="w-5 h-5 text-white" />
+          )}
         </div>
       </div>
 

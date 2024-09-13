@@ -14,6 +14,11 @@ import StylePresetSide from './ai-params/StylePresetSide';
 
 const GenerateSidebar = () => {
   const router = useRouter();
+
+  const handleBack = () => {
+    router.back();
+  };
+
   const [isPublicImagesEnabled, setIsPublicImagesEnabled] = useState(false);
 
   return (
@@ -23,7 +28,7 @@ const GenerateSidebar = () => {
         style={{ maxWidth: '100vw', overflowX: 'auto' }}
         aria-label="Sidebar"
       >
-        <Link className="flex items-center justify-between" href="/marketplace">
+        <Link className="flex items-center justify-between" href="/home">
           <div className="flex items-center ml-3 mt-6">
             <FaDiceD20 className="text-white text-[24px] " />
             &nbsp;&nbsp;
@@ -35,7 +40,7 @@ const GenerateSidebar = () => {
             </h2>
           </div>
 
-          <div className="mt-6 mr-3">
+          <div className="mt-6 mr-3 cursor-pointer" onClick={handleBack}>
             <FaArrowAltCircleLeft className="text-white text-2xl " />
           </div>
         </Link>
