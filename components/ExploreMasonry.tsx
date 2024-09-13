@@ -1,71 +1,113 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Masonry, { ResponsiveMasonry } from 'react-responsive-masonry';
 import axios from 'axios';
 import ImageCard from './cards/ImageCard';
 import ImageSkeleton from './skeleton/ImageSkeleton';
 
-interface NFT {
-  metadata_url: string;
-  image_url?: string;
-  name?: string;
-  prompts?: string;
-  identifier: string;
-  attributes: Attribute[];
-}
-
-interface Token {
-  metadata?: Metadata;
+interface Prompt {
   id: string;
-  image_url?: string;
-}
-
-interface Metadata {
-  attributes?: Attribute[];
-  name?: string;
-}
-
-interface Attribute {
-  trait_type: string;
-  value: string;
+  ipfs_image_url: string;
+  post_name: string;
+  prompt: string;
 }
 
 const ExploreMasonry = () => {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [publicPrompts, setPublicPrompts] = useState([]);
-  const API_URL = process.env.NEXT_PUBLIC_RPC_LINK;
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
+  const [publicPrompts, setPublicPrompts] = useState<Prompt[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastElementRef = useCallback(
+    (node) => {
+      if (isLoading) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && hasMore) {
+            setPage((prevPage) => prevPage + 1);
+          }
+        },
+        {
+          root: null,
+          rootMargin: '200px', // Start loading when within 200px of the end
+          threshold: 0,
+        }
+      );
+      if (node) observer.current.observe(node);
+    },
+    [isLoading, hasMore]
+  );
 
   useEffect(() => {
     fetchPublicPrompts();
-  }, []);
-
-  const skeletonItems = Array.from({ length: 10 }).map((_, index) => (
-    <ImageSkeleton key={index} index={index} />
-  ));
-
-  const imageItems = publicPrompts?.map((nft, index) => (
-    <ImageCard
-      key={index}
-      index={index}
-      imageUrl={nft.ipfs_image_url}
-      name={nft.post_name}
-      prompt={nft.prompt}
-    />
-  ));
+  }, [page]);
 
   const fetchPublicPrompts = async () => {
+    if (isLoading) return;
     setIsLoading(true);
     try {
-      const response = await axios.get(
-        `${BASE_URL}/prompts/get-public-prompts/?page=1&page_size=20`
+      const response = await axios.get<{ prompts: Prompt[] }>(
+        `${BASE_URL}/prompts/get-public-prompts/?page=${page}&page_size=20`
       );
-      setPublicPrompts(response.data.prompts);
+
+      setPublicPrompts((prevPrompts) => {
+        const newPrompts = response.data.prompts.filter(
+          (newPrompt) =>
+            !prevPrompts.some(
+              (prevPrompt) =>
+                prevPrompt.ipfs_image_url === newPrompt.ipfs_image_url
+            )
+        );
+        return [...prevPrompts, ...newPrompts];
+      });
+      setHasMore(response.data.prompts.length === 20);
     } catch (error) {
       console.error('Error fetching public prompts:', error);
     } finally {
       setIsLoading(false);
+      setIsInitialLoad(false);
     }
   };
+
+  const renderItems = () => {
+    const items = [];
+    for (let i = 0; i < publicPrompts.length; i++) {
+      const prompt = publicPrompts[i];
+      items.push(
+        <div
+          key={prompt.id}
+          ref={i === publicPrompts.length - 5 ? lastElementRef : null} // Changed from -1 to -5
+        >
+          <ImageCard
+            index={i}
+            imageUrl={prompt.ipfs_image_url}
+            name={prompt.post_name}
+            prompt={prompt.prompt}
+          />
+        </div>
+      );
+    }
+    return items;
+  };
+
+  if (isInitialLoad) {
+    return (
+      <div className="ml-[230px] mt-1">
+        <ResponsiveMasonry
+          columnsCountBreakPoints={{ 400: 2, 500: 3, 700: 4, 900: 5 }}
+        >
+          <Masonry columnsCount={5} gutter="8px">
+            {Array.from({ length: 20 }).map((_, index) => (
+              <ImageSkeleton key={`initial-skeleton-${index}`} index={index} />
+            ))}
+          </Masonry>
+        </ResponsiveMasonry>
+      </div>
+    );
+  }
 
   return (
     <div className="ml-[230px] mt-1">
@@ -73,7 +115,7 @@ const ExploreMasonry = () => {
         columnsCountBreakPoints={{ 400: 2, 500: 3, 700: 4, 900: 5 }}
       >
         <Masonry columnsCount={5} gutter="8px">
-          {isLoading ? skeletonItems : imageItems}
+          {renderItems()}
         </Masonry>
       </ResponsiveMasonry>
     </div>

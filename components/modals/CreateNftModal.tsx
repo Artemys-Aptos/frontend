@@ -18,7 +18,6 @@ import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { AptosClient, TxnBuilderTypes, BCS, HexString, Provider } from 'aptos';
 
 const CreateNftModal = ({ openModal, handleOnClose, image }) => {
-  const { addNFT } = useAddNft();
   const { signAndSubmitTransaction, account, network } = useWallet();
   console.log(network);
 
