@@ -20,6 +20,7 @@ interface NFT {
   prompts?: string;
   identifier: string;
   attributes: Attribute[];
+  promptPrice: number;
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -63,7 +64,7 @@ const MarketplaceC = () => {
           </p>
         </div>
       </div>
-      <div className="grid grid-cols-5 gap-3 mt-4 ml-[35px] mr-[6px] pl-[200px]">
+      <div className="grid grid-cols-5 2xl:grid-cols-7 gap-3 mt-4 ml-[35px] mr-[6px] pl-[200px]">
         {isLoading
           ? Array.from({ length: 10 }).map((_, index) => (
               <PromptCardSkeleton key={index} />
@@ -75,6 +76,8 @@ const MarketplaceC = () => {
                 name={prompt.collection_name}
                 creator={prompt.account_address}
                 price={prompt.prompt_nft_price}
+                prompt={prompt.prompt}
+                cid={prompt.cid}
               />
             ))}
       </div>

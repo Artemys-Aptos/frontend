@@ -10,6 +10,7 @@ const prompt_tags = [
   { name: 'Photography' },
   { name: 'Sci-Fi' },
   { name: 'Fantasy' },
+  { name: 'Mystery' },
 ];
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL;

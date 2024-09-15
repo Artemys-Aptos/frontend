@@ -1,15 +1,15 @@
 import { InputTransactionData } from "@aptos-labs/wallet-adapter-react";
 
-export type MintNftArguments = {
+export type MintPromptArguments = {
   collectionId: string;
   amount: number;
 };
 
-export const mintNFT = (args: MintNftArguments): InputTransactionData => {
+export const mintPrompt = (args: MintPromptArguments): InputTransactionData => {
   const { collectionId, amount } = args;
   return {
     data: {
-      function: `${process.env.NEXT_PUBLIC_MODULE_ADDRESS}::launchpad::mint_nft`,
+      function: `${process.env.NEXT_PUBLIC_MODULE_ADDRESS}::prompt_marketplace::mint_prompt`,
       typeArguments: [],
       functionArguments: [collectionId, amount],
     },

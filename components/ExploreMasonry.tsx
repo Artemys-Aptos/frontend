@@ -5,10 +5,13 @@ import ImageCard from './cards/ImageCard';
 import ImageSkeleton from './skeleton/ImageSkeleton';
 
 interface Prompt {
-  id: string;
+  id: number;
   ipfs_image_url: string;
   post_name: string;
   prompt: string;
+  account_address: string;
+  promptType: string;
+  likes_count: number;
 }
 
 const ExploreMasonry = () => {
@@ -32,7 +35,7 @@ const ExploreMasonry = () => {
         },
         {
           root: null,
-          rootMargin: '200px', // Start loading when within 200px of the end
+          rootMargin: '200px',
           threshold: 0,
         }
       );
@@ -56,10 +59,7 @@ const ExploreMasonry = () => {
       setPublicPrompts((prevPrompts) => {
         const newPrompts = response.data.prompts.filter(
           (newPrompt) =>
-            !prevPrompts.some(
-              (prevPrompt) =>
-                prevPrompt.ipfs_image_url === newPrompt.ipfs_image_url
-            )
+            !prevPrompts.some((prevPrompt) => prevPrompt.id === newPrompt.id)
         );
         return [...prevPrompts, ...newPrompts];
       });
@@ -72,6 +72,8 @@ const ExploreMasonry = () => {
     }
   };
 
+  console.log('public ', publicPrompts);
+
   const renderItems = () => {
     const items = [];
     for (let i = 0; i < publicPrompts.length; i++) {
@@ -79,13 +81,17 @@ const ExploreMasonry = () => {
       items.push(
         <div
           key={prompt.id}
-          ref={i === publicPrompts.length - 5 ? lastElementRef : null} // Changed from -1 to -5
+          ref={i === publicPrompts.length - 5 ? lastElementRef : null}
         >
           <ImageCard
             index={i}
             imageUrl={prompt.ipfs_image_url}
             name={prompt.post_name}
             prompt={prompt.prompt}
+            promptId={prompt.id}
+            promptType="public"
+            account={prompt.account_address}
+            likesCount={prompt.likes_count}
           />
         </div>
       );

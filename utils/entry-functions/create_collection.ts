@@ -1,4 +1,5 @@
 import { TxnBuilderTypes } from 'aptos';
+import { dateToSeconds } from '../aptos/helpers';
 
 export type CreatePromptCollectionArguments = {
   description: string;
@@ -6,8 +7,8 @@ export type CreatePromptCollectionArguments = {
   uri: string;
   maxSupply: number;
   preMintAmount: number;
-  publicMintStartTime: Date;
-  publicMintEndTime?: Date | null;
+  publicMintStartDate: Date;
+  publicMintEndDate?: Date | null;
   publicMintLimitPerAddr: number;
   publicMintFeePerPrompt: number;
 };
@@ -21,8 +22,8 @@ export const createPromptCollection = (
     uri,
     maxSupply,
     preMintAmount,
-    publicMintStartTime,
-    publicMintEndTime,
+    publicMintStartDate,
+    publicMintEndDate,
     publicMintLimitPerAddr,
     publicMintFeePerPrompt,
   } = args;
@@ -37,8 +38,10 @@ export const createPromptCollection = (
       uri,
       maxSupply,
       preMintAmount,
-      Math.floor(publicMintStartTime.getTime() / 1000),
-      publicMintEndTime ? Math.floor(publicMintEndTime.getTime() / 1000) : null,
+      publicMintStartDate
+        ? dateToSeconds(publicMintStartDate)
+        : dateToSeconds(new Date()),
+      publicMintEndDate ? dateToSeconds(publicMintEndDate) : null,
       publicMintLimitPerAddr,
       Math.floor(publicMintFeePerPrompt * 100000000),
     ],

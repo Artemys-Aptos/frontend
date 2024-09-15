@@ -3,17 +3,12 @@ import AIModels from './ai-params/AIModels';
 import StylePreset from './ai-params/StylePreset';
 import Tab from './Tab';
 import PromptGeneratorModal from './modals/PromptGeneratorModal';
-import axios from 'axios';
 import { useImages } from '@/context/ImageContext';
 import { ScaleLoader } from 'react-spinners';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import useStableDiffusion from '@/services/useStableDiffusion';
 import Tags from './ai-params/Tags';
-
-interface Artifact {
-  base64: string;
-}
 
 interface ImageObject {
   id: number;
@@ -50,7 +45,10 @@ const GenerateImage = () => {
     setIsGenerating(true);
 
     try {
-      const data = await useStableDiffusion(editablePromptInput, {
+      const promptToUse = editablePromptInput || receivedPrompt;
+      setPrompts(promptToUse);
+
+      const data = await useStableDiffusion(promptToUse, {
         aspect_ratio: '1:1',
       });
 
@@ -82,8 +80,15 @@ const GenerateImage = () => {
   useEffect(() => {
     if (receivedPrompt && !editablePromptInput) {
       setEditablePromptInput(receivedPrompt);
+      setPrompts(receivedPrompt);
     }
   }, [receivedPrompt]);
+
+  useEffect(() => {
+    if (editablePromptInput) {
+      setPrompts(editablePromptInput);
+    }
+  }, [editablePromptInput]);
 
   return (
     <div>

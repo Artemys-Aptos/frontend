@@ -1,13 +1,14 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 // @ts-nocheck
 import { Dialog, Transition } from '@headlessui/react';
-import { Fragment, useState } from 'react';
+import { Fragment, useState, useCallback } from 'react';
 import { FaRegCopy, FaWandMagicSparkles } from 'react-icons/fa6';
 import { BsFillPatchQuestionFill } from 'react-icons/bs';
 import { RiCloseCircleLine } from 'react-icons/ri';
 import { FiDownload } from 'react-icons/fi';
 import { MdOutlineShare } from 'react-icons/md';
 import Link from 'next/link';
+import FullscreenImageModal from './FullscreenImageModal';
 
 const PromptFreeDetails = ({
   openMintModal,
@@ -17,6 +18,23 @@ const PromptFreeDetails = ({
   prompt,
 }) => {
   const [buttonText, setButtonText] = useState('Copy Prompt');
+  const [isFullscreenModalOpen, setIsFullscreenModalOpen] = useState(false);
+
+  const handleImageClick = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsFullscreenModalOpen(true);
+  }, []);
+
+  const handleFullscreenClose = useCallback(() => {
+    setIsFullscreenModalOpen(false);
+  }, []);
+
+  const handleFreeModalClose = useCallback(() => {
+    if (!isFullscreenModalOpen) {
+      handleOnClose();
+    }
+  }, [isFullscreenModalOpen, handleOnClose]);
 
   const handleCopyClick = () => {
     setButtonText('Copied!');
@@ -33,7 +51,7 @@ const PromptFreeDetails = ({
         <Dialog
           as="div"
           className="relative z-10 font-serif"
-          onClose={handleOnClose}
+          onClose={handleFreeModalClose}
         >
           <Transition.Child
             as={Fragment}
@@ -63,13 +81,14 @@ const PromptFreeDetails = ({
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-[60%]  transform overflow-hidden rounded-lg py-3 bg-[#1a1919c5] border border-gray-800 p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-[899px]  transform overflow-hidden rounded-lg py-3 bg-[#1a1919c5] border border-gray-800 p-6 text-left align-middle shadow-xl transition-all">
                   <div className="mt-4 flex w-full text-center justify-center">
                     <div className="w-[100%]">
                       <img
                         src={image}
                         alt=""
-                        className="rounded-xl w-[1024px] h-[800px]  object-cover"
+                        className="rounded-xl w-[1024px] h-[800px]  object-cover cursor-pointer"
+                        onClick={handleImageClick}
                       />
                       <div className="pt-2 text-start text-white">
                         <div className="pt-1 ml-[10px] w-[100%] text-sm flex justify-center gap-3  ">
@@ -179,9 +198,7 @@ const PromptFreeDetails = ({
                           <h1 className="text-[12px] text-gray-400 text-bold">
                             Chain
                           </h1>
-                          <p className="text-[14px] font-bold">
-                            Aptos Testnet
-                          </p>
+                          <p className="text-[14px] font-bold">Aptos Testnet</p>
                         </div>
                         <div>
                           <h1 className="text-[12px] text-gray-400 text-bold">
@@ -211,6 +228,13 @@ const PromptFreeDetails = ({
           </div>
         </Dialog>
       </Transition>
+      {isFullscreenModalOpen && (
+        <FullscreenImageModal
+          isOpen={isFullscreenModalOpen}
+          handleClose={handleFullscreenClose}
+          imageSrc={image}
+        />
+      )}
     </>
   );
 };

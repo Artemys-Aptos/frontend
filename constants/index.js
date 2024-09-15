@@ -46,7 +46,7 @@ export const navigation = [
   },
   {
     name: 'My Creations',
-    href: '/user-feed',
+    href: '/social-feed',
     icon: <AiOutlineHome className="bg-transparent" />,
   },
   {

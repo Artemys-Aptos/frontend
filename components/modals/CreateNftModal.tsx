@@ -194,12 +194,13 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
             'https://deep-zitella-artemys-846660d9.koyeb.app/marketplace/add-premium-prompts/',
             {
               ipfs_image_url: imageUrl,
+              account_address: address,
               prompt: promptValue,
               post_name: promptNftName,
-              account_address: address,
+              cid: metadataUrl,
+              prompt_tag: '3D Art',
               collection_name: promptNftName,
               max_supply: maxSupply,
-              prompt_tag: '3D Art',
               prompt_nft_price: publicMintFeePerNFT,
             }
           );

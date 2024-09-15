@@ -13,9 +13,8 @@ const getRandomWord = () => {
   return words[randomIndex];
 };
 
-const PromptCard = ({ img, name, prompt, creator, price }) => {
+const PromptCard = ({ img, name, prompt, creator, price, cid }) => {
   const [openModal, setOpenModal] = useState(false);
-  const [tokenPrice, setTokenPrice] = useState();
   const [isPriceLoaded, setIsPriceLoaded] = useState(false);
 
   const handleOpenModal = () => {
@@ -23,8 +22,8 @@ const PromptCard = ({ img, name, prompt, creator, price }) => {
   };
 
   return (
-    <div className="border-gradient relative mb-10 flex justify-center items-center rounded-xl">
-      <div className="w-full p-2 h-full cursor-pointer overflow-hidden rounded-2xl flex flex-col items-center bg-black ">
+    <div className="border-gradient relative mb-10 flex justify-center items-center rounded-xl w-[224px]">
+      <div className="w-[224px] p-2 h-full cursor-pointer overflow-hidden rounded-2xl flex flex-col items-center bg-black ">
         <div onClick={handleOpenModal}>
           <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
 
@@ -88,16 +87,16 @@ const PromptCard = ({ img, name, prompt, creator, price }) => {
           </div>
         </div>
       </div>
-      {/* <PromptPremiumDetails
+      <PromptPremiumDetails
         openMintModal={openModal}
         handleOnClose={() => setOpenModal(false)}
         image={img}
         name={name}
-        tokenId={tokenId}
-        price={tokenPrice}
+        price={price}
         prompt={prompt}
         creator={creator}
-      /> */}
+        cid={cid}
+      />
     </div>
   );
 };

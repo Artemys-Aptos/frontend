@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { Dialog, Transition } from '@headlessui/react';
-import { Fragment, useState, useEffect } from 'react';
+import { Fragment, useState, useEffect, useCallback } from 'react';
 import { FaRegCopy, FaWandMagicSparkles } from 'react-icons/fa6';
 import { RiCloseCircleLine } from 'react-icons/ri';
 import { FiDownload } from 'react-icons/fi';
@@ -9,79 +9,144 @@ import PromptSkeleton from '../skeleton/PromptSkeleton';
 import { ethers } from 'ethers';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { decryptPrompt } from '@/utils/encryptPrompt';
+import { decryptPrompt, alternativeDecrypt } from '@/utils/encryptPrompt';
 import generateKey from '@/utils/generateKey';
 import { ClipLoader } from 'react-spinners';
 import Link from 'next/link';
 import { checkTokenAccess } from '@/utils/checkTokenAccess';
 import { formatAddress } from '@/utils/formatAddress';
+import { mintPrompt } from '@/utils/entry-functions/mint_nft';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { aptosClient } from '@/utils/aptos/aptosClient';
+import { getCollectionIdByUri } from '@/utils/aptos/getCollectionIdByUri';
+import { checkUserNftAccess } from '@/utils/aptos/checkTokenAccess';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import FullscreenImageModal from './FullscreenImageModal';
 
 const PromptPremiumDetails = ({
   openMintModal,
   handleOnClose,
   image,
   name,
-  tokenId,
   price,
   tokenPrice,
   prompt,
   creator,
+  cid,
 }) => {
-  const { ethereum } = window || {};
-  const [hasAccess, setHasAccess] = useState(false);
-  const [decryptedResponse, setDecryptedResponse] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const { account, signAndSubmitTransaction } = useWallet();
   const [buttonText, setButtonText] = useState('Copy Prompt');
-  const address = '0x123';
-  const [txHash, setTxHash] = useState('');
+  const [amount, setAmount] = useState(1);
+  const [isFullscreenModalOpen, setIsFullscreenModalOpen] = useState(false);
 
-  // const defaultBalance = useFetchBalance(selectedAccount);
-  // console.log('Default Balance:', defaultBalance);
+  const handleImageClick = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsFullscreenModalOpen(true);
+  }, []);
+
+  const handleFullscreenClose = useCallback(() => {
+    setIsFullscreenModalOpen(false);
+  }, []);
+
+  const handlePremiumModalClose = useCallback(() => {
+    if (!isFullscreenModalOpen) {
+      handleOnClose();
+    }
+  }, [isFullscreenModalOpen, handleOnClose]);
+
+  const fetchCollectionId = async (address) => {
+    if (address && cid) {
+      const response = await getCollectionIdByUri(address, cid);
+      console.log('Collection ID Response:', response);
+      return response;
+    }
+    return null;
+  };
+
+  const { data: accessData, isLoading: accessLoading } = useQuery({
+    queryKey: ['userAccess', account?.address, cid],
+    queryFn: async () => {
+      if (account?.address && cid) {
+        const accessResponse = await checkUserNftAccess(account.address, cid);
+        if (accessResponse === 'Has Access') {
+          const decryptionKey = generateKey(name);
+          const decryptedPrompt = decryptPrompt(prompt, decryptionKey);
+          return { hasAccess: true, decryptedPrompt };
+        }
+        return { hasAccess: false, decryptedPrompt: null };
+      }
+      return { hasAccess: false, decryptedPrompt: null };
+    },
+    enabled: !!openMintModal && !!account?.address && !!cid,
+  });
+
+  const { data: userCollectionId } = useQuery({
+    queryKey: ['userCollectionId', account?.address, cid],
+    queryFn: () => fetchCollectionId(account?.address),
+    enabled: !!account?.address && !!cid,
+  });
+
+  const { data: creatorCollectionId } = useQuery({
+    queryKey: ['creatorCollectionId', creator, cid],
+    queryFn: () => fetchCollectionId(creator),
+    enabled: !!creator && !!cid,
+  });
+
+  const mintMutation = useMutation({
+    mutationFn: async () => {
+      if (!account) {
+        throw new Error('Please connect your wallet');
+      }
+
+      const response = await signAndSubmitTransaction(
+        mintPrompt({
+          collectionId: creatorCollectionId,
+          amount,
+        })
+      );
+
+      const committedTransactionResponse =
+        await aptosClient().waitForTransaction({
+          transactionHash: response.hash,
+        });
+
+      if (!committedTransactionResponse.success) {
+        throw new Error('Transaction failed. Check console for details.');
+      }
+
+      return `Successfully minted ${amount} NFT(s)!`;
+    },
+    onSuccess: (data) => {
+      toast.success('Successfully bought a Prompt NFT');
+    },
+    onError: (error) => {
+      console.error('Error minting NFT:', error);
+      toast.error(`Error minting NFT: ${error.message}`);
+    },
+  });
+
+  const handleMint = (e) => {
+    e.preventDefault();
+    mintMutation.mutate();
+  };
 
   const handleCopyClick = () => {
     setButtonText('Copied!');
     navigator.clipboard.writeText(prompt);
-
     setTimeout(() => {
       setButtonText('Copy Prompt');
     }, 3000);
   };
-
-  const handleAccessRequest = async () => {
-    setIsLoading(true);
-
-    try {
-      const accessResponse = await checkTokenAccess(tokenId, address);
-
-      if (accessResponse === 'Has Access') {
-        const decryptionKey = generateKey(name);
-        const decryptedPrompt = decryptPrompt(prompt, decryptionKey);
-        setDecryptedResponse(decryptedPrompt);
-        setHasAccess(true);
-      } else {
-        setHasAccess(false);
-      }
-    } catch (error) {
-      console.error('Error checking token access:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (openMintModal) {
-      handleAccessRequest();
-    }
-  }, [openMintModal, tokenId]);
 
   return (
     <>
       <Transition appear show={openMintModal} as={Fragment}>
         <Dialog
           as="div"
-          className="relative z-10 font-serif"
-          onClose={handleOnClose}
+          className="relative font-serif"
+          style={{ zIndex: isFullscreenModalOpen ? 40 : 50 }}
+          onClose={handlePremiumModalClose}
         >
           <Transition.Child
             as={Fragment}
@@ -111,13 +176,14 @@ const PromptPremiumDetails = ({
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-[70%]  transform overflow-hidden rounded-lg py-3 bg-[#1a1919c5] border border-gray-800 p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-[899px]  transform overflow-hidden rounded-lg py-3 bg-[#1a1919c5] border border-gray-800 p-6 text-left align-middle shadow-xl transition-all">
                   <div className="mt-4 flex w-full text-center justify-center">
                     <div className="w-[100%]">
                       <img
                         src={image}
                         alt=""
-                        className="rounded-xl w-[1024px] h-[800px]  object-cover"
+                        className="rounded-xl w-[1024px] h-[800px]  object-cover cursor-pointer"
+                        onClick={handleImageClick}
                       />
                       <div className="pt-2 text-start text-white">
                         <div className="pt-1 ml-[10px] w-[100%] text-sm flex justify-center gap-3  ">
@@ -166,11 +232,11 @@ const PromptPremiumDetails = ({
                         <h4 className="pl-4 text-sm font-bold">
                           Prompt Details
                         </h4>
-                        {isLoading ? (
+                        {accessLoading ? (
                           <PromptSkeleton />
-                        ) : hasAccess ? (
+                        ) : accessData?.hasAccess ? (
                           <p className="ml-[10px] w-full mt-2 text-sm p-2 rounded-md border-[10px] border-[#292828] text-gray-300">
-                            {decryptedResponse}
+                            {accessData.decryptedPrompt}
                           </p>
                         ) : (
                           <div className="relative">
@@ -194,9 +260,9 @@ const PromptPremiumDetails = ({
 
                         <div className="pt-2 ml-[10px] w-[100%] text-sm flex justify-center gap-3 border-[10px] border-[#292828] ">
                           <button
-                            disabled={!hasAccess}
+                            disabled={!accessData?.hasAccess}
                             className={`p-2 mb-2 border-[6px] rounded-lg border-[#292828] w-[40%] flex items-center justify-center gap-1 ${
-                              !hasAccess
+                              !accessData?.hasAccess
                                 ? 'text-stone-500 cursor-not-allowed'
                                 : ''
                             }`}
@@ -206,9 +272,9 @@ const PromptPremiumDetails = ({
                             {buttonText}
                           </button>
                           <button
-                            disabled={!hasAccess}
+                            disabled={!accessData?.hasAccess}
                             className={`p-2 mb-2 border-[6px] rounded-lg border-[#292828] w-[40%] flex items-center gap-1 justify-center ${
-                              !hasAccess
+                              !accessData?.hasAccess
                                 ? 'text-stone-500 cursor-not-allowed'
                                 : ''
                             }`}
@@ -216,7 +282,7 @@ const PromptPremiumDetails = ({
                             <Link
                               href="/generate"
                               className={`flex items-center ${
-                                !hasAccess
+                                !accessData?.hasAccess
                                   ? 'text-stone-500 cursor-not-allowed'
                                   : ''
                               }`}
@@ -232,7 +298,7 @@ const PromptPremiumDetails = ({
                         <h4 className="pl-4 text-sm font-bold">
                           Negative Prompts
                         </h4>
-                        {hasAccess && (
+                        {accessData?.hasAccess && (
                           <p className="ml-[10px] w-full mt-2 text-sm p-2 rounded-md border-[10px] border-[#292828] text-gray-300 ">
                             cartoon, 2d, sketch, drawing, anime, open mouth,
                             nudity, naked, nsfw, helmet, head gear, close up,
@@ -247,7 +313,7 @@ const PromptPremiumDetails = ({
                           </p>
                         )}
 
-                        {!hasAccess && (
+                        {!accessData?.hasAccess && (
                           <div className="relative">
                             <p className="ml-[10px] w-full mt-2 text-sm p-2 rounded-md border-[10px] border-[#292828] text-gray-300 blur-[4px]">
                               Lorem ipsum dolor sit amet consectetur adipisicing
@@ -313,7 +379,7 @@ const PromptPremiumDetails = ({
 
                       <div className="pt-8 text-start">
                         <div className="pt-2 ml-[10px] w-[100%] text-sm flex justify-center gap-3 border-[10px] border-[#292828] pb-2">
-                          {isGenerating ? (
+                          {mintMutation.isLoading ? (
                             <span className="text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 w-[80%] font-bold px-32 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300 rounded-lg sm:w-auto py-4 text-center text-lg cursor-pointer hover:opacity-50">
                               <ClipLoader
                                 color="#f0f0f0"
@@ -322,16 +388,16 @@ const PromptPremiumDetails = ({
                                 width="3px"
                               />
                             </span>
-                          ) : hasAccess ? (
-                            <span className="text-white bg-gradient-to-r from-green-500 to-green-700 w-[80%] font-bold px-24 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 rounded-lg sm:w-auto py-4 text-center text-lg">
-                              Prompt Bought
+                          ) : accessData?.hasAccess ? (
+                            <span className="text-white bg-gradient-to-r from-green-500 to-green-700 w-[80%] font-bold px-24 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 rounded-lg sm:w-auto py-4 text-center text-[14px]">
+                              You have Prompt Access
                             </span>
                           ) : (
                             <span
                               className="text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 w-[80%] font-bold px-24 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300 rounded-lg sm:w-auto py-4 text-center text-lg cursor-pointer hover:opacity-50"
-                              onClick={mintNFT}
+                              onClick={handleMint}
                             >
-                              Buy for {price} SHM
+                              Buy for {price} APT
                             </span>
                           )}
                         </div>
@@ -345,6 +411,13 @@ const PromptPremiumDetails = ({
           </div>
         </Dialog>
       </Transition>
+      {isFullscreenModalOpen && (
+        <FullscreenImageModal
+          isOpen={isFullscreenModalOpen}
+          handleClose={handleFullscreenClose}
+          imageSrc={image}
+        />
+      )}
       <ToastContainer />
     </>
   );
