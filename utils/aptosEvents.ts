@@ -1,5 +1,3 @@
-// test func
-
 export interface AptosEvent {
   version: string;
   guid: {
