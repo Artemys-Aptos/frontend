@@ -6,7 +6,13 @@ import { formatAddress } from '@/utils/formatAddress';
 const ensName = 'ghost';
 const ensAvatar = 'https://avatars.dicebear.com/api/avataaars/ghost.svg';
 
-const SubmissionCard = ({ ipfsHash, voteCount, onVote, submitter }) => {
+const SubmissionCard = ({
+  ipfsHash,
+  voteCount,
+  onVote,
+  submitter,
+  isVoting,
+}) => {
   console.log('IPFS Hash:', ipfsHash);
 
   console.log(submitter);
@@ -23,7 +29,7 @@ const SubmissionCard = ({ ipfsHash, voteCount, onVote, submitter }) => {
   };
 
   return (
-    <div className="w-[89%] mt-10 h-[300px] border-2 border-gray-500 rounded-[50px] mx-[75px]">
+    <div className="w-[85%] mt-10 h-[300px] border-2 border-gray-500 rounded-[50px] mx-[20px]">
       <div className="flex gap-10">
         <img
           src={getImageUrl(ipfsData.image)}
@@ -38,7 +44,9 @@ const SubmissionCard = ({ ipfsHash, voteCount, onVote, submitter }) => {
             <p className="flex items-center">
               <span className="p-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full" />
               &nbsp;
-              <span className="text-sm">{submitter ? formatAddress(submitter) : '0x'}</span>
+              <span className="text-sm">
+                {submitter ? formatAddress(submitter) : '0x'}
+              </span>
             </p>
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           </div>
@@ -52,7 +60,7 @@ const SubmissionCard = ({ ipfsHash, voteCount, onVote, submitter }) => {
               className="text-white border-purple-300 border focus:ring-4 focus:outline-none focus:ring-purple-300 font-medium rounded-xl text-sm px-8 mt-5 py-2 hover:opacity-70"
               onClick={onVote}
             >
-              Vote
+              {isVoting ? 'Voting....' : 'Vote'}
             </button>
           </div>
         </div>

@@ -14,6 +14,8 @@ interface ImageContextType {
   setSubmissionDuration: React.Dispatch<React.SetStateAction<string>>;
   submissionStartTime: string;
   setSubmissionStartTime: React.Dispatch<React.SetStateAction<string>>;
+  submissionHeaderIpfsUri: string;
+  SetSubmissionHeaderIpfsUri: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const ImageContext = createContext<ImageContextType | undefined>(undefined);
@@ -35,6 +37,8 @@ export const ImageProvider: React.FC<ImageProviderProps> = ({ children }) => {
   const [prompts, setPrompts] = useState<string>('');
   const [submissionDuration, setSubmissionDuration] = useState<string>('');
   const [submissionStartTime, setSubmissionStartTime] = useState<string>('');
+  const [submissionHeaderIpfsUri, SetSubmissionHeaderIpfsUri] =
+    useState<string>('');
 
   return (
     <ImageContext.Provider
@@ -47,6 +51,8 @@ export const ImageProvider: React.FC<ImageProviderProps> = ({ children }) => {
         setSubmissionDuration,
         submissionStartTime,
         setSubmissionStartTime,
+        submissionHeaderIpfsUri,
+        SetSubmissionHeaderIpfsUri,
       }}
     >
       {children}

@@ -51,7 +51,7 @@ const CompletedChallengesCard = ({
   };
 
   return (
-    <div className=" w-full cursor-pointer text-gray-300">
+    <div className=" w-[328px] cursor-pointer text-gray-300">
       <div className=" shadow p-5 rounded-lg border-t-4 border-b-4 border-r-[1px] border-l-[1px] border-purple-900   bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 rex">
         <img
           // src={challengeImage}
@@ -63,7 +63,7 @@ const CompletedChallengesCard = ({
         <p className="mt-4 text-2xl text-secondary-white text-center font-medium bg-transparent">
           {ipfsData.name}
         </p>
-        <p className="mt-4 font-bold text-secondary-white text-center border-purple-400 border-2 mx-8 p-1 rounded-xl">
+        <p className="mt-4 font-bold text-secondary-white text-center text-sm border-purple-400 border-2 mx-2 p-1 rounded-xl">
           Challenge Ended
         </p>
         {/* <div className="mt-4 bg-black/70 border border-gray-500 rounded-xl p-2 absolute top-0 right-4">

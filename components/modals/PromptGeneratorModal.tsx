@@ -42,10 +42,10 @@ Transform the following input into a unique, detailed prompt of 50-70 words: "${
 Be creative, surprising, and push the boundaries of imagination while maintaining coherence. Your prompt should inspire truly unique and captivating images.`;
 
     const postData = {
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: [{ role: 'user', content: gptPrompt }],
-      temperature: 0.7,
-      max_tokens: 200,
+      temperature: 0.5,
+      max_tokens: 300,
     };
 
     try {

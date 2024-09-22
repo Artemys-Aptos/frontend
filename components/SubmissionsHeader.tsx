@@ -8,7 +8,7 @@ import { ethers } from 'ethers';
 import useIpfsData from '@/utils/useIpfsData';
 
 interface SubmissionsHeaderProps {
-  tokenId: string | number;
+  ipfsUri: string;
 }
 
 interface Challenge {
@@ -21,8 +21,9 @@ interface Challenge {
   numberOfSubmissions: number;
 }
 
-const SubmissionsHeader: React.FC<SubmissionsHeaderProps> = ({ tokenId }) => {
+const SubmissionsHeader: React.FC<SubmissionsHeaderProps> = ({ ipfsUri }) => {
   const [openModal, setOpenModal] = useState<boolean>(false);
+  const { submissionHeaderIpfsUri } = useImages();
   const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -30,9 +31,7 @@ const SubmissionsHeader: React.FC<SubmissionsHeaderProps> = ({ tokenId }) => {
     setOpenModal(true);
   };
 
-  console.log('Token ID:', tokenId);
-
-  const ipfsData = useIpfsData(activeChallenges[0]?.ipfsUrl);
+  const ipfsData = useIpfsData(submissionHeaderIpfsUri);
 
   console.log('IPFS data:', ipfsData);
   console.log('Active challenges:', activeChallenges[0]);
@@ -52,9 +51,9 @@ const SubmissionsHeader: React.FC<SubmissionsHeaderProps> = ({ tokenId }) => {
           {ipfsData?.description}
           <br />
           <br />
-          <span className="text-lg mt-6 font-bold">
+          {/* <span className="text-lg mt-6 font-bold">
             Time Left: 00d:01h:22m:56s
-          </span>
+          </span> */}
         </p>
       </div>
 
@@ -62,7 +61,7 @@ const SubmissionsHeader: React.FC<SubmissionsHeaderProps> = ({ tokenId }) => {
         <SearchSubmission />
         <div>
           <button
-            className="text-white  bg-gradient-to-r from-purple-700 via-purple-500 to-pink-500 mt-3 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300  rounded-lg text-sm font-bold w-[140px] sm:w-[250px] px-8 py-5 text-center dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-800"
+            className="text-white  bg-gradient-to-r from-purple-700 via-purple-500 to-pink-500 mt-3 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300  rounded-lg text-sm font-bold w-[100px] sm:w-[200px] px-8 py-2 text-center dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-800"
             onClick={handleOpenModal}
           >
             Submit to Challenge

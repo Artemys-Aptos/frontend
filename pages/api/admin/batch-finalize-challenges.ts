@@ -25,7 +25,7 @@ function runMiddleware(
 
 const nodeUrl = process.env.NEXT_PUBLIC_APTOS_NODE_URL;
 const privateKey = process.env.FEE_PAYER_PRIVATE_KEY;
-const moduleAddress = process.env.CHALLENGES_MODULE_ADDRESS;
+const moduleAddress = process.env.NEXT_PUBLIC_CHALLENGES_MODULE_ADDRESS;
 const API_KEY = process.env.FINALIZE_API_KEY;
 const baseUrl = 'http://localhost:3000';
 
@@ -86,7 +86,7 @@ export default async function handler(
       return res.status(200).json({ message: 'No new challenges to finalize' });
     }
 
-    const maxBatchSize = Math.min(4, challengesToFinalize.length);
+    const maxBatchSize = Math.min(8, challengesToFinalize.length);
 
     console.log('Preparing batch finalize payload...');
     const batchFinalizePayload = {

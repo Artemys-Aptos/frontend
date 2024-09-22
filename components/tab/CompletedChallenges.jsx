@@ -1,43 +1,57 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import CompletedChallengesCard from '../cards/CompletedChallengesCard';
 import ChallengesCardSkeleton from '../skeleton/ChallengesCardSkeleton';
 import getChallengeImage from '@/utils/challengeImageGenerator';
 
 const challengeImage = getChallengeImage();
 
+const fetchCompletedChallenges = async () => {
+  const response = await fetch('/api/challenges/completed');
+  if (!response.ok) {
+    throw new Error('Failed to fetch completed challenges');
+  }
+  return response.json();
+};
+
 const CompletedChallenges = () => {
-  const [completedChallenges, setCompletedChallenges] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    data: completedChallenges,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['completedChallenges'],
+    queryFn: fetchCompletedChallenges,
+  });
+
+  if (error) {
+    return <div>Error fetching completed challenges: {error.message}</div>;
+  }
 
   return (
-    <div className="flex justify-center items-center">
+    <div className="flex justify-start items-center">
       <div className="text-white w-full grid grid-cols-3 md:grid-cols-3 gap-[60px] mx-[20px]">
-        {/* {isLoading ? (
-          <>
+        {isLoading ? (
+          <React.Fragment>
             <ChallengesCardSkeleton />
             <ChallengesCardSkeleton />
             <ChallengesCardSkeleton />
-          </>
+          </React.Fragment>
         ) : (
-          completedChallenges
-            .filter(
-              (challenge) =>
-                !['0', '1', '2', '3', '4', '5'].includes(challenge.id)
-            )
-            .map((challenge) => (
-              <CompletedChallengesCard
-                key={challenge.id}
-                id={challenge.id}
-                ipfsUrl={challenge.ipfsUrl}
-                duration={challenge.duration}
-                startTime={challenge.startTime}
-                isActive={challenge.isActive}
-                winner={challenge.winner}
-                numberOfSubmissions={challenge.numberOfSubmissions}
-                challengeImage={challengeImage}
-              />
-            ))
-        )} */}
+          completedChallenges.map((challenge) => (
+            <CompletedChallengesCard
+              key={challenge.challenge_id}
+              id={challenge.challenge_id}
+              ipfsUrl={challenge.ipfs_uri}
+              duration={challenge.duration}
+              startTime={challenge.start_time}
+              endTime={challenge.end_time}
+              isActive={false}
+              numberOfSubmissions={challenge.numberOfSubmissions}
+              challengeImage={challengeImage}
+            />
+          ))
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 
-const CONTRACT_ADDRESS = process.env.CHALLENGES_MODULE_ADDRESS;
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CHALLENGES_MODULE_ADDRESS;
 const config = new AptosConfig({ network: Network.TESTNET });
 const aptos = new Aptos(config);
 

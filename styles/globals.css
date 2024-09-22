@@ -504,12 +504,12 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgb(167, 178, 193); /* Tailwind color gray-100 */
+  background: #808080; /* Tailwind color gray-100 */
   cursor: pointer;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #808080; /* Tailwind color gray-800 */
+  background: #111827; /* Tailwind color gray-800 */
   border-radius: 5px;
 }
 

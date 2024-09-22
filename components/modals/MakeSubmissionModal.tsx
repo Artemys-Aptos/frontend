@@ -8,17 +8,25 @@ import base64ToBlob from '@/utils/base64toBlob';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import useStableDiffusion from '@/services/useStableDiffusion';
+import { submitChallenge } from '@/utils/entry-functions/submit-challenge';
+import { voteSubmission } from '@/utils/entry-functions/vote_submission';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { AptosClient, TxnBuilderTypes, BCS, HexString, Provider } from 'aptos';
+import { useQueryClient } from '@tanstack/react-query';
 
 const MakeSubmissionModal = ({ openModal, handleOnClose }) => {
+  const queryClient = useQueryClient();
   const router = useRouter();
-  const { ethereum } = window || {};
   const { id } = router.query;
   const [submissionName, setSubmissionName] = useState('');
   const [submissionDescription, setSubmissionDescription] = useState('');
   const [images, setImages] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [base64Image, setBase64Image] = useState(null);
   const [txHash, setTxHash] = useState('');
+
+  const { signAndSubmitTransaction, account, network } = useWallet();
 
   const apiKeys = process.env.NEXT_PUBLIC_NFTSTORAGE_TOKEN;
 
@@ -63,8 +71,15 @@ const MakeSubmissionModal = ({ openModal, handleOnClose }) => {
     }
   };
 
-  const submitSolution = async (e) => {
+  const submitEntry = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+
+    if (!account || !window.petra || account.address === null) {
+      toast.error('Please connect your Petra wallet first');
+      setIsSubmitting(false);
+      return;
+    }
 
     let base64String = base64Image;
     let imageType = 'image/jpeg';
@@ -77,7 +92,6 @@ const MakeSubmissionModal = ({ openModal, handleOnClose }) => {
 
       const formData = new FormData();
       formData.append('file', blob);
-
       const imagePinataResponse = await axios.post(pinataEndpoint, formData, {
         headers: {
           'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
@@ -120,15 +134,58 @@ const MakeSubmissionModal = ({ openModal, handleOnClose }) => {
 
       const metadataUrl = `https://gateway.pinata.cloud/ipfs/${metadataPinataResponse.data.IpfsHash}`;
 
-      toast.update(mintNotification, {
-        render: 'Submission Completed Successfully',
-        type: 'success',
-        isLoading: false,
-        autoClose: 7000,
+      const payload = submitChallenge({
+        challengeId: parseInt(id as string),
+        ipfsUri: metadataUrl,
       });
+
+      const provider = new Provider(network.name);
+      const feePayerTransaction = await provider.generateFeePayerTransaction(
+        account.address,
+        payload,
+        process.env.NEXT_PUBLIC_FEE_PAYER_ADDRESS!
+      );
+
+      const petra = window.petra;
+      const publicKey = HexString.ensure(account.publicKey);
+      const signedTransaction = await petra.signMultiAgentTransaction(
+        feePayerTransaction
+      );
+
+      const senderAuth = new TxnBuilderTypes.AccountAuthenticatorEd25519(
+        new TxnBuilderTypes.Ed25519PublicKey(publicKey.toUint8Array()),
+        new TxnBuilderTypes.Ed25519Signature(signedTransaction)
+      );
+
+      const serializer = new BCS.Serializer();
+      feePayerTransaction.serialize(serializer);
+      senderAuth.serialize(serializer);
+      const serializedBytes = serializer.getBytes();
+      const hexData = HexString.fromUint8Array(serializedBytes).toString();
+
+      const response = await axios.post('/api/sponsor-transaction', {
+        serializedData: hexData,
+        network: network.name,
+      });
+
+      if (response.data.hash) {
+        setTxHash(response.data.hash);
+        toast.update(mintNotification, {
+          render: 'Submission Completed Successfully',
+          type: 'success',
+          isLoading: false,
+          autoClose: 7000,
+        });
+
+        queryClient.invalidateQueries(['submissions', id]);
+      } else {
+        throw new Error('Failed to submit sponsored transaction');
+      }
     } catch (error) {
-      console.log(error);
+      console.error('Error in submission process:', error);
+      toast.error(`Error: ${error.message}`);
     } finally {
+      setIsSubmitting(false);
       handleOnClose();
     }
   };
@@ -205,7 +262,10 @@ const MakeSubmissionModal = ({ openModal, handleOnClose }) => {
                     </div>
                     &nbsp;&nbsp;&nbsp;&nbsp;
                     <div className="text-white w-[50%]">
-                      <form className="ml-[40px] w-[300px] mt-6">
+                      <form
+                        className="ml-[40px] w-[300px] mt-6"
+                        onSubmit={submitEntry}
+                      >
                         <div className="relative z-0 w-full mb-6 group">
                           <input
                             name="floating"
@@ -221,31 +281,27 @@ const MakeSubmissionModal = ({ openModal, handleOnClose }) => {
                             Entry Name
                           </label>
                         </div>
-                        <div className="relative z-0 w-full mb-6 group">
+
+                        <div className="w-full mb-6">
                           <textarea
                             name="text"
-                            id="floating_text"
-                            className="block py-2.5 px-0 w-full text-sm text-white bg-transparent border-0 border-b-2 border-gray-500 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-purple-500 focus:outline-none focus:ring-0 focus:border-purple-600 peer"
-                            placeholder=" "
+                            className="w-[400px] h-[200px] p-2 bg-transparent border border-gray-600 placeholder:text-sm placeholder:text-gray-600 rounded-md placeholder:p-2 text-sm outline-none focus:outline-none focus:ring-0"
+                            placeholder="Add your generative prompt to create entry image"
                             required
                             onChange={(e) =>
                               setSubmissionDescription(e.target.value)
                             }
                           />
-                          <label
-                            for="floating_repeat"
-                            className="peer-focus:font-medium absolute text-sm text-gray-400 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-purple-600 peer-focus:dark:text-purple-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
-                          >
-                            Prompt
-                          </label>
                         </div>
 
                         <button
                           type="submit"
-                          className="text-white  bg-gradient-to-r from-purple-700 via-purple-500 to-pink-500 mt-3 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300  rounded-lg text-sm font-bold w-[140px] sm:w-auto px-8 py-2 text-center dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-800"
-                          onClick={submitSolution}
+                          disabled={isSubmitting || !base64Image}
+                          className={`... ${
+                            isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                         >
-                          Submit
+                          {isSubmitting ? 'Submitting...' : 'Submit Solution'}
                         </button>
                       </form>
                     </div>

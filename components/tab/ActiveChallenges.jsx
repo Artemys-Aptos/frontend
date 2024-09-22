@@ -1,36 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import ActiveChallengesCard from '../cards/ActiveChallengesCard';
 import ChallengesCardSkeleton from '../skeleton/ChallengesCardSkeleton';
 import getChallengeImage from '@/utils/challengeImageGenerator';
+import { octasToApt } from '@/utils/aptos/octasToApt';
 
 const challengeImage = getChallengeImage();
 
+const fetchActiveChallenges = async () => {
+  const response = await fetch('/api/challenges/active');
+  if (!response.ok) {
+    throw new Error('Failed to fetch active challenges');
+  }
+  return response.json();
+};
+
 const ActiveChallenges = () => {
-  const [activeChallenges, setActiveChallenges] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    data: activeChallenges,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['activeChallenges'],
+    queryFn: fetchActiveChallenges,
+  });
 
-  useEffect(() => {
-    const fetchActiveChallenges = async () => {
-      try {
-        const response = await fetch('/api/challenges/completed');
-        if (!response.ok) {
-          throw new Error('Failed to fetch active challenges');
-        }
-        const data = await response.json();
-        console.log('Active Challenges:', data);
-        setActiveChallenges(data);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching active challenges:', error);
-        setIsLoading(false);
-      }
-    };
+  console.log('active', activeChallenges);
 
-    fetchActiveChallenges();
-  }, []);
+  if (error) {
+    return <div>Error fetching challenges: {error.message}</div>;
+  }
 
   return (
-    <div className="flex justify-center items-center">
+    <div className="flex justify-start items-start">
       <div className="text-white w-full grid grid-cols-3 md:grid-cols-3 gap-[60px] mx-[20px]">
         {isLoading ? (
           <React.Fragment>
@@ -47,6 +49,7 @@ const ActiveChallenges = () => {
               duration={challenge.duration}
               startTime={challenge.start_time}
               isActive={true}
+              prize={octasToApt(challenge.prize)}
               numberOfSubmissions={challenge.numberOfSubmissions}
               challengeImage={challengeImage}
             />
