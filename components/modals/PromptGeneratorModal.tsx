@@ -33,7 +33,7 @@ Incorporate a mix of the following elements in your prompts:
 - Lighting and atmosphere (e.g., "volumetric fog, bioluminescent accents")
 - Textures and materials (e.g., "brushed metal surface with holographic sheen")
 - Camera perspectives (e.g., "ultra-wide angle, low perspective shot")
-- Color palettes (e.g., "muted neon tones with splashes of vibrant cyan")
+- Color palettes (e.g., "muted tones with splashes of vibrant cyan")
 - Mood and emotion (e.g., "evocative of wistful nostalgia")
 - Technical specifications (e.g., "8K resolution, photorealistic render")
 
@@ -44,7 +44,7 @@ Be creative, surprising, and push the boundaries of imagination while maintainin
     const postData = {
       model: 'gpt-4o',
       messages: [{ role: 'user', content: gptPrompt }],
-      temperature: 0.5,
+      temperature: 1,
       max_tokens: 300,
     };
 

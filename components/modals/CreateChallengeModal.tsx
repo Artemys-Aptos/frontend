@@ -8,13 +8,16 @@ import axios from 'axios';
 import { ClipLoader } from 'react-spinners';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { AptosClient, TxnBuilderTypes, BCS, HexString, Provider } from 'aptos';
-import { createChallenge } from '@/utils/entry-functions/create-challenge';
+import {
+  createChallenge,
+  createChallengeSponsored,
+} from '@/utils/entry-functions/create-challenge';
 import hoursToSeconds from '@/utils/hoursToSeconds';
 import { useQueryClient } from '@tanstack/react-query';
 
 const CreateChallengeModal = ({ openMintModal, handleOnClose }) => {
   const queryClient = useQueryClient();
-  const { signAndSubmitTransaction, account, network } = useWallet();
+  const { signAndSubmitTransaction, account, network, wallet } = useWallet();
   const [imageFile, setImageFile] = useState(null);
   const [challengeName, setChallengeName] = useState('');
   const [challengeDescription, setChallengeDescription] = useState('');
@@ -23,6 +26,8 @@ const CreateChallengeModal = ({ openMintModal, handleOnClose }) => {
   const [selectedImage, setSelectedImage] = useState('/placeholder.jpg');
   const [isCreating, setIsCreating] = useState(false);
   const [txHash, setTxHash] = useState('');
+
+  const isPetraConnected = wallet?.name === 'Petra' && window.petra;
 
   const pinataApiKey = process.env.NEXT_PUBLIC_PINATA_API_KEY;
   const pinataSecretApiKey = process.env.NEXT_PUBLIC_PINATA_SECRET_API_KEY;
@@ -37,6 +42,131 @@ const CreateChallengeModal = ({ openMintModal, handleOnClose }) => {
     }
   };
 
+  const handleCreateChallengeSponsored = async (e) => {
+    e.preventDefault();
+    setIsCreating(true);
+
+    if (!account || !window.petra || account.address === null) {
+      toast.error('Please connect your Petra wallet first');
+      setIsCreating(false);
+      return;
+    }
+
+    try {
+      // const createNotification = toast.loading(
+      //   'Please wait! Creating your challenge'
+      // );
+
+      const formData = new FormData();
+      formData.append('file', imageFile);
+      const imagePinataResponse = await axios.post(pinataEndpoint, formData, {
+        headers: {
+          'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
+          pinata_api_key: pinataApiKey,
+          pinata_secret_api_key: pinataSecretApiKey,
+        },
+      });
+
+      if (!imagePinataResponse.data.IpfsHash) {
+        throw new Error('Failed to upload image to Pinata');
+      }
+
+      const imageUrl = `https://gateway.pinata.cloud/ipfs/${imagePinataResponse.data.IpfsHash}`;
+
+      const metadata = {
+        name: challengeName,
+        description: challengeDescription,
+        image: imageUrl,
+        prize: challengePrize,
+        duration: challengeDuration,
+      };
+
+      const jsonBlob = new Blob([JSON.stringify(metadata)], {
+        type: 'application/json',
+      });
+      formData.set('file', jsonBlob);
+      const metadataPinataResponse = await axios.post(
+        pinataEndpoint,
+        formData,
+        {
+          headers: {
+            'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
+            pinata_api_key: pinataApiKey,
+            pinata_secret_api_key: pinataSecretApiKey,
+          },
+        }
+      );
+
+      if (!metadataPinataResponse.data.IpfsHash) {
+        throw new Error('Failed to upload metadata to Pinata');
+      }
+
+      const metadataUrl = `https://gateway.pinata.cloud/ipfs/${metadataPinataResponse.data.IpfsHash}`;
+
+      const payload = createChallengeSponsored({
+        prize: Number(challengePrize),
+        startDate: new Date(),
+        duration: hoursToSeconds(Number(challengeDuration)),
+        ipfsUri: metadataUrl,
+      });
+
+      const provider = new Provider(network.name);
+      const feePayerTransaction = await provider.generateFeePayerTransaction(
+        account.address,
+        payload,
+        process.env.NEXT_PUBLIC_FEE_PAYER_ADDRESS!
+      );
+
+      const petra = window.petra;
+      const publicKey = HexString.ensure(account.publicKey);
+      const signedTransaction = await petra.signMultiAgentTransaction(
+        feePayerTransaction
+      );
+
+      const senderAuth = new TxnBuilderTypes.AccountAuthenticatorEd25519(
+        new TxnBuilderTypes.Ed25519PublicKey(publicKey.toUint8Array()),
+        new TxnBuilderTypes.Ed25519Signature(signedTransaction)
+      );
+
+      const serializer = new BCS.Serializer();
+      feePayerTransaction.serialize(serializer);
+      senderAuth.serialize(serializer);
+      const serializedBytes = serializer.getBytes();
+      const hexData = HexString.fromUint8Array(serializedBytes).toString();
+
+      const response = await axios.post('/api/sponsor-transaction', {
+        serializedData: hexData,
+        network: network.name,
+      });
+
+      if (response.data.hash) {
+        setTxHash(response.data.hash);
+        toast.success('Challenge Created Successfully', {
+          type: 'success',
+          isLoading: false,
+          autoClose: 7000,
+        });
+
+        queryClient.invalidateQueries(['activeChallenges']);
+      } else {
+        throw new Error('Failed to submit sponsored transaction');
+      }
+
+      setChallengeName('');
+      setChallengeDescription('');
+      setChallengeDuration('');
+      setChallengePrize('');
+      setSelectedImage('/placeholder.jpg');
+      setImageFile(null);
+      handleOnClose();
+    } catch (error) {
+      console.error('Error in challenge creation process:', error);
+      toast.error(`Error: ${error.message}`);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   const handleCreateChallenge = async (e) => {
     e.preventDefault();
     setIsCreating(true);
@@ -48,9 +178,9 @@ const CreateChallengeModal = ({ openMintModal, handleOnClose }) => {
     }
 
     try {
-      const createNotification = toast.loading(
-        'Please wait! Creating your challenge'
-      );
+      // const createNotification = toast.loading(
+      //   'Please wait! Creating your challenge'
+      // );
 
       const formData = new FormData();
       formData.append('file', imageFile);
@@ -105,39 +235,28 @@ const CreateChallengeModal = ({ openMintModal, handleOnClose }) => {
         ipfsUri: metadataUrl,
       });
 
-      const provider = new Provider(network.name);
-      const feePayerTransaction = await provider.generateFeePayerTransaction(
-        account.address,
-        payload,
-        process.env.NEXT_PUBLIC_FEE_PAYER_ADDRESS!
-      );
+      let response;
 
-      const petra = window.petra;
-      const publicKey = HexString.ensure(account.publicKey);
-      const signedTransaction = await petra.signMultiAgentTransaction(
-        feePayerTransaction
-      );
+      try {
+        response = await signAndSubmitTransaction(payload);
+      } catch (signError) {
+        console.error('Error during transaction signing:', signError);
+        throw new Error(`Transaction signing failed: ${signError.message}`);
+      }
 
-      const senderAuth = new TxnBuilderTypes.AccountAuthenticatorEd25519(
-        new TxnBuilderTypes.Ed25519PublicKey(publicKey.toUint8Array()),
-        new TxnBuilderTypes.Ed25519Signature(signedTransaction)
-      );
+      console.log('Transaction response:', response);
 
-      const serializer = new BCS.Serializer();
-      feePayerTransaction.serialize(serializer);
-      senderAuth.serialize(serializer);
-      const serializedBytes = serializer.getBytes();
-      const hexData = HexString.fromUint8Array(serializedBytes).toString();
+      const committedTransactionResponse =
+        await aptosClient().waitForTransaction({
+          transactionHash: response.hash,
+        });
 
-      const response = await axios.post('/api/sponsor-transaction', {
-        serializedData: hexData,
-        network: network.name,
-      });
+      console.log('Committed transaction:', committedTransactionResponse);
 
-      if (response.data.hash) {
-        setTxHash(response.data.hash);
-        toast.update(createNotification, {
-          render: 'Challenge Created Successfully',
+      if (committedTransactionResponse.success) {
+        setTxHash(response.hash);
+
+        toast.success('Challenge Created Successfully', {
           type: 'success',
           isLoading: false,
           autoClose: 7000,
@@ -162,6 +281,10 @@ const CreateChallengeModal = ({ openMintModal, handleOnClose }) => {
       setIsCreating(false);
     }
   };
+
+  const appropriateCreateChallengeFunction = isPetraConnected
+    ? handleCreateChallengeSponsored
+    : handleCreateChallenge;
 
   return (
     <>
@@ -303,7 +426,7 @@ const CreateChallengeModal = ({ openMintModal, handleOnClose }) => {
                           <button
                             type="submit"
                             className="text-white  bg-gradient-to-r from-purple-700 via-purple-500 to-pink-500 mt-3 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300  rounded-lg text-sm font-bold w-[140px] sm:w-auto px-8 py-2 text-center dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-800"
-                            onClick={handleCreateChallenge}
+                            onClick={appropriateCreateChallengeFunction}
                           >
                             Create Challenge
                           </button>

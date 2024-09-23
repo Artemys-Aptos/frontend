@@ -1,3 +1,4 @@
+import { InputTransactionData } from '@aptos-labs/wallet-adapter-react';
 import { TxnBuilderTypes } from 'aptos';
 
 export type VoteSubmissionArguments = {
@@ -5,7 +6,7 @@ export type VoteSubmissionArguments = {
   submissionId: number;
 };
 
-export const voteSubmission = (args: VoteSubmissionArguments) => {
+export const voteSubmissionSponsored = (args: VoteSubmissionArguments) => {
   const { challengeId, submissionId } = args;
 
   return {
@@ -13,5 +14,19 @@ export const voteSubmission = (args: VoteSubmissionArguments) => {
     function: `${process.env.NEXT_PUBLIC_CHALLENGES_MODULE_ADDRESS}::challenge_contract::vote`,
     type_arguments: [],
     arguments: [challengeId, submissionId],
+  };
+};
+
+export const voteSubmission = (
+  args: VoteSubmissionArguments
+): InputTransactionData => {
+  const { challengeId, submissionId } = args;
+
+  return {
+    data: {
+      function: `${process.env.NEXT_PUBLIC_CHALLENGES_MODULE_ADDRESS}::challenge_contract::vote`,
+      typeArguments: [],
+      functionArguments: [challengeId, submissionId],
+    },
   };
 };

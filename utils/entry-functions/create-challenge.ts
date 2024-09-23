@@ -1,3 +1,5 @@
+import { InputTransactionData } from '@aptos-labs/wallet-adapter-react';
+import { TxnBuilderTypes } from 'aptos';
 import { dateToSeconds } from '../aptos/helpers';
 
 export type CreateChallengeArguments = {
@@ -7,7 +9,7 @@ export type CreateChallengeArguments = {
   ipfsUri: string;
 };
 
-export const createChallenge = (args: CreateChallengeArguments) => {
+export const createChallengeSponsored = (args: CreateChallengeArguments) => {
   const { prize, startDate, duration, ipfsUri } = args;
 
   return {
@@ -20,5 +22,24 @@ export const createChallenge = (args: CreateChallengeArguments) => {
       duration,
       ipfsUri,
     ],
+  };
+};
+
+export const createChallenge = (
+  args: CreateChallengeArguments
+): InputTransactionData => {
+  const { prize, startDate, duration, ipfsUri } = args;
+
+  return {
+    data: {
+      function: `${process.env.NEXT_PUBLIC_CHALLENGES_MODULE_ADDRESS}::challenge_contract::create_challenge`,
+      typeArguments: [],
+      functionArguments: [
+        Math.floor(prize * 100000000),
+        dateToSeconds(startDate),
+        duration,
+        ipfsUri,
+      ],
+    },
   };
 };

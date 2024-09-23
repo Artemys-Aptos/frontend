@@ -11,13 +11,14 @@ const useStableDiffusion = async (prompt, options = {}) => {
     const payload = {
       prompt: enhancedPrompt,
       negative_prompt: negativePrompt,
+      style_preset: 'neon-punk',
       output_format: 'webp',
       ...options,
     };
 
     try {
       const response = await axios.postForm(
-        `https://api.stability.ai/v2beta/stable-image/generate/ultra`,
+        `https://api.stability.ai/v2beta/stable-image/generate/core`,
         axios.toFormData(payload, new FormData()),
         {
           validateStatus: undefined,
@@ -41,7 +42,7 @@ const useStableDiffusion = async (prompt, options = {}) => {
   };
 
   try {
-    const imagePromises = Array.from({ length: 4 }, () => generateImage());
+    const imagePromises = Array.from({ length: 1 }, () => generateImage());
     const images = await Promise.all(imagePromises);
 
     return {

@@ -13,10 +13,6 @@ const SubmissionCard = ({
   submitter,
   isVoting,
 }) => {
-  console.log('IPFS Hash:', ipfsHash);
-
-  console.log(submitter);
-
   const ipfsData = useIpfsData(ipfsHash);
   console.log(ipfsData);
 

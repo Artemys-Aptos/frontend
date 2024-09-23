@@ -1,4 +1,4 @@
-import { TxnBuilderTypes } from 'aptos';
+import { InputTransactionData } from '@aptos-labs/wallet-adapter-react';
 import { dateToSeconds } from '../aptos/helpers';
 
 export type CreatePromptCollectionArguments = {
@@ -15,7 +15,7 @@ export type CreatePromptCollectionArguments = {
 
 export const createPromptCollection = (
   args: CreatePromptCollectionArguments
-) => {
+): InputTransactionData => {
   const {
     description,
     name,
@@ -29,21 +29,22 @@ export const createPromptCollection = (
   } = args;
 
   return {
-    type: 'entry_function_payload',
-    function: `${process.env.NEXT_PUBLIC_MODULE_ADDRESS}::prompt_marketplace::create_prompt_collection`,
-    type_arguments: [],
-    arguments: [
-      description,
-      name,
-      uri,
-      maxSupply,
-      preMintAmount,
-      publicMintStartDate
-        ? dateToSeconds(publicMintStartDate)
-        : dateToSeconds(new Date()),
-      publicMintEndDate ? dateToSeconds(publicMintEndDate) : null,
-      publicMintLimitPerAddr,
-      Math.floor(publicMintFeePerPrompt * 100000000),
-    ],
+    data: {
+      function: `${process.env.NEXT_PUBLIC_MODULE_ADDRESS}::prompt_marketplace::create_prompt_collection`,
+      typeArguments: [],
+      functionArguments: [
+        description,
+        name,
+        uri,
+        maxSupply,
+        preMintAmount,
+        publicMintStartDate
+          ? dateToSeconds(publicMintStartDate)
+          : dateToSeconds(new Date()),
+        publicMintEndDate ? dateToSeconds(publicMintEndDate) : null,
+        publicMintLimitPerAddr,
+        Math.floor(publicMintFeePerPrompt * 100000000),
+      ],
+    },
   };
 };

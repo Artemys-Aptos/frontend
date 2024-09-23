@@ -13,13 +13,16 @@ import { encryptPrompt } from '@/utils/encryptPrompt';
 import generateKey from '@/utils/generateKey';
 import axios from 'axios';
 import { createPromptCollection } from '@/utils/entry-functions/create_collection';
+import { createPromptCollectionSponsored } from '@/utils/entry-functions/create_collection_sponsored';
 import { aptosClient } from '@/utils/aptos/aptosClient';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { AptosClient, TxnBuilderTypes, BCS, HexString, Provider } from 'aptos';
 
 const CreateNftModal = ({ openModal, handleOnClose, image }) => {
-  const { signAndSubmitTransaction, account, network } = useWallet();
+  const { signAndSubmitTransaction, account, network, wallet } = useWallet();
   console.log(network);
+
+  const isPetraConnected = wallet?.name === 'Petra' && window.petra;
 
   const { prompts } = useImages();
   const address = account?.address || '';
@@ -47,7 +50,7 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
     setCompletedMint(false);
   };
 
-  const createPromptNFT = async (e) => {
+  const createPromptNFTSponsored = async (e) => {
     e.preventDefault();
 
     if (!account || !window.petra || account.address === null) {
@@ -128,7 +131,7 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
 
       const currentTime = new Date();
 
-      const payload = createPromptCollection({
+      const payload = createPromptCollectionSponsored({
         description: promptNftDescription,
         name: promptNftName,
         uri: metadataUrl,
@@ -244,6 +247,180 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
       // });
     }
   };
+
+  const createPromptNFT = async (e) => {
+    e.preventDefault();
+
+    if (!account || !account.address) {
+      toast.error('Please connect your wallet first');
+      return;
+    }
+
+    console.log('Wallet object:', wallet);
+    console.log('Account object:', account);
+    console.log('signAndSubmitTransaction:', signAndSubmitTransaction);
+
+    let base64String = image;
+    let imageType = 'image/jpeg';
+    let blob = base64ToBlob(base64String, imageType);
+
+    let promptValue;
+    if (isSwitchEnabled) {
+      const promptKey = generateKey(promptNftName);
+      promptValue = encryptPrompt(prompts, promptKey);
+    } else {
+      promptValue = prompts;
+    }
+
+    let updatedAttr = [...attr];
+    updatedAttr[3].value = promptValue;
+    updatedAttr[2].value = 'Aptos';
+    updatedAttr[1].value = account.address;
+    updatedAttr[4].value = isSwitchEnabled ? 'premium' : 'public';
+
+    setAttr(updatedAttr);
+
+    try {
+      // const mintNotification = toast.loading(
+      //   'Please wait! Tokenizing your Prompt NFT'
+      // );
+
+      const formData = new FormData();
+      formData.append('file', blob);
+
+      const imagePinataResponse = await axios.post(pinataEndpoint, formData, {
+        headers: {
+          'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
+          pinata_api_key: pinataApiKey,
+          pinata_secret_api_key: pinataSecretApiKey,
+        },
+      });
+
+      if (!imagePinataResponse.data.IpfsHash) {
+        throw new Error('Failed to upload image to Pinata');
+      }
+
+      const imageUrl = `https://gateway.pinata.cloud/ipfs/${imagePinataResponse.data.IpfsHash}`;
+
+      const metadata = {
+        name: promptNftName,
+        description: promptNftDescription,
+        image: imageUrl,
+        attributes: updatedAttr,
+      };
+
+      const jsonBlob = new Blob([JSON.stringify(metadata)], {
+        type: 'application/json',
+      });
+      formData.set('file', jsonBlob);
+      const metadataPinataResponse = await axios.post(
+        pinataEndpoint,
+        formData,
+        {
+          headers: {
+            'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
+            pinata_api_key: pinataApiKey,
+            pinata_secret_api_key: pinataSecretApiKey,
+          },
+        }
+      );
+
+      if (!metadataPinataResponse.data.IpfsHash) {
+        throw new Error('Failed to upload metadata to Pinata');
+      }
+
+      const metadataUrl = `https://gateway.pinata.cloud/ipfs/${metadataPinataResponse.data.IpfsHash}`;
+
+      const currentTime = new Date();
+
+      const payload = createPromptCollection({
+        description: promptNftDescription,
+        name: promptNftName,
+        uri: metadataUrl,
+        maxSupply: maxSupply,
+        preMintAmount: 1,
+        publicMintStartTime: currentTime,
+        publicMintEndTime: null,
+        publicMintLimitPerAddr: 1,
+        publicMintFeePerPrompt: publicMintFeePerNFT,
+      });
+
+      let response;
+
+      try {
+        response = await signAndSubmitTransaction(payload);
+      } catch (signError) {
+        console.error('Error during transaction signing:', signError);
+        throw new Error(`Transaction signing failed: ${signError.message}`);
+      }
+
+      console.log('Transaction response:', response);
+
+      const committedTransactionResponse =
+        await aptosClient().waitForTransaction({
+          transactionHash: response.hash,
+        });
+
+      console.log('Committed transaction:', committedTransactionResponse);
+
+      if (committedTransactionResponse.success) {
+        setTxHash(response.hash);
+        setCompletedMint(true);
+
+        if (isSwitchEnabled) {
+          await axios.post(
+            'https://deep-zitella-artemys-846660d9.koyeb.app/marketplace/add-premium-prompts/',
+            {
+              ipfs_image_url: imageUrl,
+              account_address: account.address,
+              prompt: promptValue,
+              post_name: promptNftName,
+              cid: metadataUrl,
+              prompt_tag: '3D Art',
+              collection_name: promptNftName,
+              max_supply: maxSupply,
+              prompt_nft_price: publicMintFeePerNFT,
+            }
+          );
+        } else {
+          await axios.post(
+            `https://deep-zitella-artemys-846660d9.koyeb.app/prompts/add-public-prompts/`,
+            {
+              ipfs_image_url: imageUrl,
+              prompt: promptValue,
+              account_address: account.address,
+              post_name: promptNftName,
+              public: true,
+              prompt_tag: '3D Art',
+            }
+          );
+        }
+
+        toast.update(mintNotification, {
+          render: 'Creation Completed Successfully',
+          type: 'success',
+          isLoading: false,
+          autoClose: 7000,
+        });
+
+        setPromptNftName('');
+        setPromptNftDescription('');
+        setMaxSupply(1);
+        setPublicMintFeePerNFT(0.1);
+        setCompletedMint(true);
+        setTxHash(response.hash);
+      } else {
+        throw new Error('Transaction failed');
+      }
+    } catch (error) {
+      console.error('Error in the overall NFT creation process:', error);
+      toast.error(`Error: ${error.message}`);
+    }
+  };
+
+  const appropriateCreateFunction = isPetraConnected
+    ? createPromptNFTSponsored
+    : createPromptNFT;
 
   useEffect(() => {
     if (!isSwitchEnabled) {
@@ -412,7 +589,7 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
 
                           <button
                             type="submit"
-                            onClick={createPromptNFT}
+                            onClick={appropriateCreateFunction}
                             className="text-white  bg-gradient-to-r from-purple-700 via-purple-500 to-pink-500 mt-3 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300  rounded-lg text-sm font-bold w-[140px] sm:w-auto px-8 py-2 text-center dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-800"
                           >
                             Create

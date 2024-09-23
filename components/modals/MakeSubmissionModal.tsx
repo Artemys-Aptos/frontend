@@ -8,11 +8,15 @@ import base64ToBlob from '@/utils/base64toBlob';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import useStableDiffusion from '@/services/useStableDiffusion';
-import { submitChallenge } from '@/utils/entry-functions/submit-challenge';
+import {
+  submitChallenge,
+  submitChallengeSponsored,
+} from '@/utils/entry-functions/submit-challenge';
 import { voteSubmission } from '@/utils/entry-functions/vote_submission';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { AptosClient, TxnBuilderTypes, BCS, HexString, Provider } from 'aptos';
 import { useQueryClient } from '@tanstack/react-query';
+import { aptosClient } from '@/utils/aptos/aptosClient';
 
 const MakeSubmissionModal = ({ openModal, handleOnClose }) => {
   const queryClient = useQueryClient();
@@ -26,7 +30,9 @@ const MakeSubmissionModal = ({ openModal, handleOnClose }) => {
   const [base64Image, setBase64Image] = useState(null);
   const [txHash, setTxHash] = useState('');
 
-  const { signAndSubmitTransaction, account, network } = useWallet();
+  const { signAndSubmitTransaction, account, network, wallet } = useWallet();
+
+  const isPetraConnected = wallet?.name === 'Petra' && window.petra;
 
   const apiKeys = process.env.NEXT_PUBLIC_NFTSTORAGE_TOKEN;
 
@@ -74,120 +80,178 @@ const MakeSubmissionModal = ({ openModal, handleOnClose }) => {
   const submitEntry = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
-    if (!account || !window.petra || account.address === null) {
-      toast.error('Please connect your Petra wallet first');
-      setIsSubmitting(false);
-      return;
-    }
-
-    let base64String = base64Image;
-    let imageType = 'image/jpeg';
-    let blob = base64ToBlob(base64String, imageType);
+    let mintNotification;
 
     try {
-      const mintNotification = toast.loading(
-        'Please wait! Submitting your entry'
-      );
+      await validateWalletConnection();
+      mintNotification = toast.loading('Please wait! Submitting your entry');
 
-      const formData = new FormData();
-      formData.append('file', blob);
-      const imagePinataResponse = await axios.post(pinataEndpoint, formData, {
-        headers: {
-          'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
-          pinata_api_key: pinataApiKey,
-          pinata_secret_api_key: pinataSecretApiKey,
-        },
+      const imageUrl = await uploadImageToPinata();
+      const metadataUrl = await uploadMetadataToPinata(imageUrl);
+      const txHash = await submitTransaction(metadataUrl);
+
+      setTxHash(txHash);
+      toast.update(mintNotification, {
+        render: 'Submission Completed Successfully',
+        type: 'success',
+        isLoading: false,
+        autoClose: 7000,
       });
 
-      if (!imagePinataResponse.data.IpfsHash) {
-        throw new Error('Failed to upload image to Pinata');
-      }
-
-      const imageUrl = `https://gateway.pinata.cloud/ipfs/${imagePinataResponse.data.IpfsHash}`;
-
-      const metadata = {
-        name: submissionName,
-        description: submissionDescription,
-        image: imageUrl,
-      };
-
-      const jsonBlob = new Blob([JSON.stringify(metadata)], {
-        type: 'application/json',
-      });
-      formData.set('file', jsonBlob);
-      const metadataPinataResponse = await axios.post(
-        pinataEndpoint,
-        formData,
-        {
-          headers: {
-            'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
-            pinata_api_key: pinataApiKey,
-            pinata_secret_api_key: pinataSecretApiKey,
-          },
-        }
-      );
-
-      if (!metadataPinataResponse.data.IpfsHash) {
-        throw new Error('Failed to upload metadata to Pinata');
-      }
-
-      const metadataUrl = `https://gateway.pinata.cloud/ipfs/${metadataPinataResponse.data.IpfsHash}`;
-
-      const payload = submitChallenge({
-        challengeId: parseInt(id as string),
-        ipfsUri: metadataUrl,
-      });
-
-      const provider = new Provider(network.name);
-      const feePayerTransaction = await provider.generateFeePayerTransaction(
-        account.address,
-        payload,
-        process.env.NEXT_PUBLIC_FEE_PAYER_ADDRESS!
-      );
-
-      const petra = window.petra;
-      const publicKey = HexString.ensure(account.publicKey);
-      const signedTransaction = await petra.signMultiAgentTransaction(
-        feePayerTransaction
-      );
-
-      const senderAuth = new TxnBuilderTypes.AccountAuthenticatorEd25519(
-        new TxnBuilderTypes.Ed25519PublicKey(publicKey.toUint8Array()),
-        new TxnBuilderTypes.Ed25519Signature(signedTransaction)
-      );
-
-      const serializer = new BCS.Serializer();
-      feePayerTransaction.serialize(serializer);
-      senderAuth.serialize(serializer);
-      const serializedBytes = serializer.getBytes();
-      const hexData = HexString.fromUint8Array(serializedBytes).toString();
-
-      const response = await axios.post('/api/sponsor-transaction', {
-        serializedData: hexData,
-        network: network.name,
-      });
-
-      if (response.data.hash) {
-        setTxHash(response.data.hash);
+      queryClient.invalidateQueries(['submissions', id]);
+      resetForm();
+    } catch (error) {
+      console.error('Error in submission process:', error);
+      if (mintNotification) {
         toast.update(mintNotification, {
-          render: 'Submission Completed Successfully',
-          type: 'success',
+          render: `Error: ${error.message}`,
+          type: 'error',
           isLoading: false,
           autoClose: 7000,
         });
-
-        queryClient.invalidateQueries(['submissions', id]);
       } else {
-        throw new Error('Failed to submit sponsored transaction');
+        toast.error(`Error: ${error.message}`, {
+          autoClose: 7000,
+        });
       }
-    } catch (error) {
-      console.error('Error in submission process:', error);
-      toast.error(`Error: ${error.message}`);
     } finally {
       setIsSubmitting(false);
       handleOnClose();
     }
+  };
+
+  const validateWalletConnection = () => {
+    if (!account || account.address === null) {
+      throw new Error('Please connect your Petra wallet first');
+    }
+  };
+
+  const uploadImageToPinata = async () => {
+    const blob = base64ToBlob(base64Image, 'image/jpeg');
+    const formData = new FormData();
+    formData.append('file', blob);
+    const response = await pinFileToPinata(formData);
+    return `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`;
+  };
+
+  const uploadMetadataToPinata = async (imageUrl) => {
+    const metadata = createMetadata(imageUrl);
+    const jsonBlob = new Blob([JSON.stringify(metadata)], {
+      type: 'application/json',
+    });
+    const formData = new FormData();
+    formData.append('file', jsonBlob);
+    const response = await pinFileToPinata(formData);
+    return `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`;
+  };
+
+  const pinFileToPinata = async (formData) => {
+    const response = await axios.post(pinataEndpoint, formData, {
+      headers: {
+        'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
+        pinata_api_key: pinataApiKey,
+        pinata_secret_api_key: pinataSecretApiKey,
+      },
+    });
+
+    if (!response.data.IpfsHash) {
+      throw new Error('Failed to upload to Pinata');
+    }
+
+    return response;
+  };
+
+  const createMetadata = (imageUrl) => ({
+    name: submissionName,
+    description: submissionDescription,
+    image: imageUrl,
+  });
+
+  const submitTransaction = async (metadataUrl) => {
+    const payload = createSubmissionPayload(metadataUrl);
+
+    if (isPetraConnected) {
+      return await submitSponsoredTransaction(payload);
+    } else {
+      return await submitNormalTransaction(payload);
+    }
+  };
+
+  const createSubmissionPayload = (metadataUrl) => ({
+    challengeId: parseInt(id),
+    ipfsUri: metadataUrl,
+  });
+
+  const submitSponsoredTransaction = async (payload) => {
+    const feePayerTransaction = await generateFeePayerTransaction(payload);
+    const signedTransaction = await signPetraTransaction(feePayerTransaction);
+    const serializedData = serializeTransaction(
+      feePayerTransaction,
+      signedTransaction
+    );
+
+    const response = await axios.post('/api/sponsor-transaction', {
+      serializedData,
+      network: network.name,
+    });
+
+    if (!response.data.hash) {
+      throw new Error('Failed to submit sponsored transaction');
+    }
+
+    return response.data.hash;
+  };
+
+  const submitNormalTransaction = async (payload) => {
+    const transaction = submitChallenge(payload);
+    const response = await signAndSubmitTransaction(transaction);
+
+    const committedTransactionResponse = await aptosClient().waitForTransaction(
+      {
+        transactionHash: response.hash,
+      }
+    );
+
+    if (!committedTransactionResponse.success) {
+      throw new Error('Transaction failed');
+    }
+
+    return response.hash;
+  };
+
+  const generateFeePayerTransaction = async (payload) => {
+    const provider = new Provider(network.name);
+    return provider.generateFeePayerTransaction(
+      account.address,
+      submitChallengeSponsored(payload),
+      process.env.NEXT_PUBLIC_FEE_PAYER_ADDRESS
+    );
+  };
+
+  const signPetraTransaction = async (feePayerTransaction) => {
+    const petra = window.petra;
+    return petra.signMultiAgentTransaction(feePayerTransaction);
+  };
+
+  const serializeTransaction = (feePayerTransaction, signedTransaction) => {
+    const publicKey = HexString.ensure(account.publicKey);
+    const senderAuth = new TxnBuilderTypes.AccountAuthenticatorEd25519(
+      new TxnBuilderTypes.Ed25519PublicKey(publicKey.toUint8Array()),
+      new TxnBuilderTypes.Ed25519Signature(signedTransaction)
+    );
+
+    const serializer = new BCS.Serializer();
+    feePayerTransaction.serialize(serializer);
+    senderAuth.serialize(serializer);
+    const serializedBytes = serializer.getBytes();
+    return HexString.fromUint8Array(serializedBytes).toString();
+  };
+
+  const resetForm = () => {
+    setSubmissionName('');
+    setSubmissionDescription('');
+    setBase64Image(null);
+    setImages(null);
   };
 
   return (
@@ -297,7 +361,7 @@ const MakeSubmissionModal = ({ openModal, handleOnClose }) => {
                         <button
                           type="submit"
                           disabled={isSubmitting || !base64Image}
-                          className={`... ${
+                          className={`className="text-white  bg-gradient-to-r from-purple-700 via-purple-500 to-pink-500 mt-3 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300  rounded-lg text-sm font-bold w-[100px] sm:w-[200px] px-8 py-2 text-center dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-800" ${
                             isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
                           }`}
                         >
