@@ -78,6 +78,9 @@ export async function checkUserNftAccess(
       }
     );
 
+    console.log("response", response);
+    
+
     const collections = response.current_collection_ownership_v2_view;
 
     console.log(collections);

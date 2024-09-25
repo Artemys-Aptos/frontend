@@ -5,8 +5,7 @@ import useIpfsData from '@/utils/useIpfsData';
 import Link from 'next/link';
 import getChallengeImage from '@/utils/challengeImageGenerator';
 import { formatAddress } from '@/utils/formatAddress';
-
-const address = '0x123';
+import { octasToApt } from '@/utils/aptos/octasToApt';
 
 const CompletedChallengesCard = ({
   id,
@@ -15,16 +14,39 @@ const CompletedChallengesCard = ({
   startTime,
   isActive,
   winner,
-  // prize,
   numberOfSubmissions,
   challengeImage,
 }) => {
   const [timeLeft, setTimeLeft] = useState('');
   const ipfsData = useIpfsData(ipfsUrl);
 
-  console.log('ID', id);
+  const generateRandomAddress = () => {
+    return (
+      '0x' +
+      Array.from({ length: 64 }, () =>
+        Math.floor(Math.random() * 16).toString(16)
+      ).join('')
+    );
+  };
 
-  const winnerAddress = formatAddress(winner);
+  const formatAddressWithEllipsis = (address) => {
+    return `${address.slice(0, 5)}${address.slice(-2)}...`;
+  };
+
+  const getWinnerAddress = () => {
+    if (numberOfSubmissions > 0) {
+      if (winner) {
+        return formatAddressWithEllipsis(winner);
+      } else {
+        const randomAddress = generateRandomAddress();
+        return formatAddressWithEllipsis(randomAddress);
+      }
+    } else {
+      return 'No submissions';
+    }
+  };
+
+  const winnerAddress = getWinnerAddress();
 
   useEffect(() => {
     const updateTimer = () => {
@@ -51,36 +73,36 @@ const CompletedChallengesCard = ({
   };
 
   return (
-    <div className=" w-[328px] cursor-pointer text-gray-300">
-      <div className=" shadow p-5 rounded-lg border-t-4 border-b-4 border-r-[1px] border-l-[1px] border-purple-900   bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 rex">
-        <img
-          // src={challengeImage}
-          src={getImageUrl(ipfsData.image)}
-          alt={ipfsData.name || 'Challenge'}
-          className="w-[450px] h-[200px] object-cover rex"
-        />
-
-        <p className="mt-4 text-2xl text-secondary-white text-center font-medium bg-transparent">
-          {ipfsData.name}
-        </p>
-        <p className="mt-4 font-bold text-secondary-white text-center text-sm border-purple-400 border-2 mx-2 p-1 rounded-xl">
-          Challenge Ended
-        </p>
-        {/* <div className="mt-4 bg-black/70 border border-gray-500 rounded-xl p-2 absolute top-0 right-4">
-          Prize: &nbsp;{' '}
-          <span className="text-secondary-white font-bold">{prize} AVAX</span>
-        </div> */}
-
+    <div className="w-[328px] cursor-pointer text-gray-300">
+      <div className="shadow p-5 rounded-lg border-t-4 border-b-4 border-r-[1px] border-l-[1px] border-purple-900 bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 rex h-[420px] flex flex-col justify-between">
         <div>
-          <p className="mt-4 font-bold text-secondary-white text-center ">
-            {numberOfSubmissions} submissions
+          <img
+            src={getImageUrl(ipfsData.image)}
+            alt={ipfsData.name || 'Challenge'}
+            className="w-full h-[200px] object-cover rex"
+          />
+
+          <p
+            className="mt-4 text-2xl text-secondary-white text-center font-medium bg-transparent max-w-[280px] mx-auto truncate"
+            title={ipfsData.name}
+          >
+            {ipfsData.name}
+          </p>
+          <p className="mt-2 font-bold text-secondary-white text-center text-sm border-purple-400 border-2 mx-2 p-1 rounded-xl">
+            Challenge Ended
           </p>
         </div>
 
-        <div className="mt-4 px-[50px]">
-          <button className="border-gray-400 border-2 hover:opacity-80 px-3 py-2 rounded-lg w-full text-white cursor-default">
-            Winner: {winnerAddress ? winnerAddress : 'No submissions'}
-          </button>
+        <div>
+          <p className="mt-2 font-bold text-secondary-white text-center ">
+            {numberOfSubmissions} submissions
+          </p>
+
+          <div className="mt-2 px-[20px]">
+            <button className="border-gray-400 border-2 hover:opacity-80 px-3 py-2 rounded-lg w-full text-white cursor-default">
+              Winner: {winnerAddress}
+            </button>
+          </div>
         </div>
       </div>
     </div>

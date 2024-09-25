@@ -49,6 +49,7 @@ const CompletedChallenges = () => {
               isActive={false}
               numberOfSubmissions={challenge.numberOfSubmissions}
               challengeImage={challengeImage}
+              winner={challenge.winner}
             />
           ))
         )}

@@ -15,27 +15,44 @@ export default async function handler(
   }
 
   try {
-    const [challengeEvents, submissionEvents] = await Promise.all([
-      aptos.getModuleEventsByEventType({
-        eventType: `${CONTRACT_ADDRESS}::challenge_contract::ChallengeCreatedEvent`,
-      }),
-      aptos.getModuleEventsByEventType({
-        eventType: `${CONTRACT_ADDRESS}::challenge_contract::SubmissionAddedEvent`,
-      }),
-    ]);
+    const [challengeEvents, submissionEvents, finalizedEvents] =
+      await Promise.all([
+        aptos.getModuleEventsByEventType({
+          eventType: `${CONTRACT_ADDRESS}::challenge_contract::ChallengeCreatedEvent`,
+        }),
+        aptos.getModuleEventsByEventType({
+          eventType: `${CONTRACT_ADDRESS}::challenge_contract::SubmissionAddedEvent`,
+        }),
+        aptos.getModuleEventsByEventType({
+          eventType: `${CONTRACT_ADDRESS}::challenge_contract::ChallengeFinalizedEvent`,
+        }),
+      ]);
 
     const currentTime = Math.floor(Date.now() / 1000);
 
-    const finalizedEvents = challengeEvents.filter((event) => {
+    const finalizedChallenges = challengeEvents.filter((event) => {
       const { start_time, duration } = event.data;
       const endTime = parseInt(start_time) + parseInt(duration);
       return currentTime >= endTime;
     });
 
-    const formattedEvents = finalizedEvents.map((event) => {
+    const formattedEvents = finalizedChallenges.map((event) => {
       const submissionCount = submissionEvents.filter(
         (subEvent) => subEvent.data.challenge_id === event.data.challenge_id
       ).length;
+
+      const finalizedEvent = finalizedEvents.find(
+        (finEvent) => finEvent.data.challenge_id === event.data.challenge_id
+      );
+
+      let winner = null;
+      if (
+        finalizedEvent &&
+        finalizedEvent.data.winner.vec &&
+        finalizedEvent.data.winner.vec.length > 0
+      ) {
+        winner = finalizedEvent.data.winner.vec[0];
+      }
 
       return {
         challenge_id: event.data.challenge_id,
@@ -50,6 +67,7 @@ export default async function handler(
         ).toLocaleString(),
         ipfs_uri: event.data.ipfs_uri,
         numberOfSubmissions: submissionCount,
+        winner: winner,
       };
     });
 

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PromptFreeDetails from '../modals/PromptFreeDetails';
-import { FaHeart } from 'react-icons/fa6';
-import { HiOutlineHeart } from 'react-icons/hi';
+import { GoLock } from 'react-icons/go';
 
 const truncatePrompt = (prompt: string, maxLength = 200) => {
   if (prompt && prompt.length > maxLength) {
@@ -10,7 +9,7 @@ const truncatePrompt = (prompt: string, maxLength = 200) => {
   return prompt;
 };
 
-interface ImageCardProps {
+interface FeedImageCardProps {
   index: number;
   imageUrl: string;
   name: string;
@@ -18,9 +17,10 @@ interface ImageCardProps {
   promptId: number;
   promptType: string;
   account: string;
+  isEncrypted: boolean;
 }
 
-const ImageCard: React.FC<ImageCardProps> = ({
+const FeedImageCard: React.FC<FeedImageCardProps> = ({
   index,
   imageUrl,
   name,
@@ -28,24 +28,12 @@ const ImageCard: React.FC<ImageCardProps> = ({
   promptId,
   promptType,
   account,
+  isEncrypted,
 }) => {
   const [openModal, setOpenModal] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [isLikeProcessing, setIsLikeProcessing] = useState(false);
-
-  useEffect(() => {
-    // Load likes from localStorage or assign random likes
-    const storedLikes = localStorage.getItem(`likes_${promptId}`);
-    if (storedLikes) {
-      setLikesCount(parseInt(storedLikes));
-      setIsLiked(localStorage.getItem(`liked_${promptId}`) === 'true');
-    } else {
-      const randomLikes = Math.floor(Math.random() * 5) + 1; // Random number between 1 and 5
-      setLikesCount(randomLikes);
-      localStorage.setItem(`likes_${promptId}`, randomLikes.toString());
-    }
-  }, [promptId]);
 
   const handleOpenModal = () => {
     setOpenModal(true);
@@ -57,7 +45,6 @@ const ImageCard: React.FC<ImageCardProps> = ({
 
     setIsLikeProcessing(true);
 
-    // Simulate API call delay
     setTimeout(() => {
       const newLikedState = !isLiked;
       const newLikesCount = newLikedState ? likesCount + 1 : likesCount - 1;
@@ -65,12 +52,11 @@ const ImageCard: React.FC<ImageCardProps> = ({
       setIsLiked(newLikedState);
       setLikesCount(newLikesCount);
 
-      // Update localStorage
       localStorage.setItem(`likes_${promptId}`, newLikesCount.toString());
       localStorage.setItem(`liked_${promptId}`, newLikedState.toString());
 
       setIsLikeProcessing(false);
-    }, 500); // 500ms delay to simulate API call
+    }, 500);
   };
 
   let height: string;
@@ -104,30 +90,16 @@ const ImageCard: React.FC<ImageCardProps> = ({
         }}
         onClick={handleOpenModal}
       >
+        {isEncrypted && (
+          <div className="absolute top-2 left-2 bg-purple-600 text-white px-2 py-1 rounded-md text-xs font-semibold flex items-center gap-1">
+            <GoLock />
+            Premium Prompt
+          </div>
+        )}
         <div className="overlay absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
         <div className="absolute bottom-2 left-2 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <span className="text-gray-300 text-sm">{truncatedPrompt}</span>
-        </div>
-
-        <div
-          className="like-button absolute top-2 right-2 rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer pointer-events-auto"
-          onClick={handleLikeClick}
-        >
-          {isLiked ? (
-            <FaHeart
-              className={`w-8 h-8 text-red-500 ${
-                isLikeProcessing ? 'opacity-50' : ''
-              }`}
-            />
-          ) : (
-            <HiOutlineHeart
-              className={`w-8 h-8 text-white ${
-                isLikeProcessing ? 'opacity-50' : ''
-              }`}
-            />
-          )}
-          <span className="ml-1 text-white">{likesCount}</span>
         </div>
       </div>
 
@@ -143,4 +115,4 @@ const ImageCard: React.FC<ImageCardProps> = ({
   );
 };
 
-export default ImageCard;
+export default FeedImageCard;

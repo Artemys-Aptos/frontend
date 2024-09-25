@@ -91,7 +91,6 @@ const ExploreMasonry = () => {
             promptId={prompt.id}
             promptType="public"
             account={prompt.account_address}
-            likesCount={prompt.likes_count}
           />
         </div>
       );

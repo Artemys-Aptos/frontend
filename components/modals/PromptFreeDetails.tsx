@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 // @ts-nocheck
 import { Dialog, Transition } from '@headlessui/react';
-import { Fragment, useState, useCallback } from 'react';
+import { Fragment, useState, useCallback, useEffect } from 'react';
 import { FaRegCopy, FaWandMagicSparkles } from 'react-icons/fa6';
 import { BsFillPatchQuestionFill } from 'react-icons/bs';
 import { RiCloseCircleLine } from 'react-icons/ri';
@@ -9,6 +9,9 @@ import { FiDownload } from 'react-icons/fi';
 import { MdOutlineShare } from 'react-icons/md';
 import Link from 'next/link';
 import FullscreenImageModal from './FullscreenImageModal';
+import { formatAddress } from '@/utils/formatAddress';
+import axios from 'axios';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 
 const PromptFreeDetails = ({
   openMintModal,
@@ -16,9 +19,15 @@ const PromptFreeDetails = ({
   image,
   name,
   prompt,
+  creator,
 }) => {
   const [buttonText, setButtonText] = useState('Copy Prompt');
   const [isFullscreenModalOpen, setIsFullscreenModalOpen] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowProcessing, setIsFollowProcessing] = useState(false);
+  const { account } = useWallet();
+
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
   const handleImageClick = useCallback((e) => {
     e.preventDefault();
@@ -44,6 +53,56 @@ const PromptFreeDetails = ({
       setButtonText('Copy Prompt');
     }, 3000);
   };
+
+  const handleFollowClick = async () => {
+    if (!account?.address || isFollowProcessing) return;
+
+    setIsFollowProcessing(true);
+    try {
+      const response = await axios.post(
+        `${baseUrl}/socialfeed/follow-creator/`,
+        null,
+        {
+          params: {
+            follower_account: account.address,
+            creator_account: creator,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        setIsFollowing(!isFollowing);
+      }
+    } catch (error) {
+      console.error('Error following/unfollowing creator:', error);
+    } finally {
+      setIsFollowProcessing(false);
+    }
+  };
+
+  useEffect(() => {
+    const checkFollowStatus = async () => {
+      if (!account?.address || !creator) return;
+
+      try {
+        const response = await axios.get(
+          `${baseUrl}/socialfeed/user-following/`,
+          {
+            params: {
+              follower_account: account.address,
+            },
+          }
+        );
+
+        const followingList = response.data.following || [];
+        setIsFollowing(followingList.includes(creator));
+      } catch (error) {
+        console.error('Error checking follow status:', error);
+      }
+    };
+
+    checkFollowStatus();
+  }, [account?.address, creator]);
 
   return (
     <>
@@ -120,16 +179,25 @@ const PromptFreeDetails = ({
                         <p className="font-bold">Creator :</p>
                         &nbsp;&nbsp;
                         <p className="flex items-center">
-                          <img
-                            src="/fight.webp"
-                            alt=""
-                            className="w-[30px] h-[30px] rounded-full object-cover mr-1"
-                          />
-                          0x1e7b2...
+                          <span className="p-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full mr-2" />
+                          <span>
+                            {creator ? formatAddress(creator) : 'user'}
+                          </span>
                         </p>
                         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                        <span className="bg-purple-500 p-[2px] rounded-full text-[16px]  px-3 cursor-pointer hover:opacity-80">
-                          Follow
+                        <span
+                          className={`border ${
+                            isFollowing
+                              ? 'bg-gray-700 text-white'
+                              : 'border-gray-200 text-gray-200'
+                          } p-[2px] rounded-full text-xs px-3 cursor-pointer hover:opacity-80 ${
+                            isFollowProcessing
+                              ? 'opacity-50 cursor-not-allowed'
+                              : ''
+                          }`}
+                          onClick={handleFollowClick}
+                        >
+                          {isFollowing ? 'Following' : 'Follow'}
                         </span>
                       </div>
 

@@ -1,18 +1,38 @@
 import React, { useState } from 'react';
+import UserGenerations from './UserGenerations';
+import Following from './Following';
 
 interface Tab {
   id: string;
   label: string;
+  component: React.ReactNode;
 }
 
 const tabs: Tab[] = [
-  { id: 'your-generations', label: 'Your Generations' },
-  { id: 'follower-feed', label: 'Follower Feed' },
-  { id: 'liked-feed', label: 'Liked Feed' },
+  {
+    id: 'your-generations',
+    label: 'Your Generations',
+    component: <UserGenerations />,
+  },
+  {
+    id: 'personalized-feed',
+    label: 'Personalized Feed',
+    component: <Following />,
+  },
+  // {
+  //   id: 'liked-feed',
+  //   label: 'Liked Feed',
+  //   component: <div>Liked Feed Content</div>,
+  // },
 ];
 
 const SocialHeader: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('your-generations');
+
+  const renderActiveTabContent = () => {
+    const activeTabData = tabs.find((tab) => tab.id === activeTab);
+    return activeTabData ? activeTabData.component : null;
+  };
 
   return (
     <div className="py-4">
@@ -22,25 +42,23 @@ const SocialHeader: React.FC = () => {
         </span>
         {' Feed'}
       </h1>
-      <div className="flex gap-4 ml-60 w-full">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            className={`px-3 py-1 text-xs rounded-md transition-colors ${
-              activeTab === tab.id
-                ? 'bg-gradient-to-r from-indigo-500 via-pink-500 to-pink-500 shadow text-white font-bold'
-                : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-            }`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-            {/* {tab.id === 'collections' && (
-              <span className="ml-1 px-1.5 py-0.5 text-xs font-semibold text-white bg-purple-500 rounded-full">
-                Beta
-              </span>
-            )} */}
-          </button>
-        ))}
+      <div className="flex flex-col ml-60">
+        <div className="flex gap-4 mb-4">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-gradient-to-r from-indigo-500 via-pink-500 to-pink-500 shadow text-white font-bold'
+                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              }`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div className="mt-4">{renderActiveTabContent()}</div>
       </div>
     </div>
   );

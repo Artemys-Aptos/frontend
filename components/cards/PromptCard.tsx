@@ -54,7 +54,7 @@ const PromptCard = ({ img, name, prompt, creator, price, cid }) => {
             </div>
 
             <span className="text-gray-300 absolute top-4 left-2 bg-purple-700 p-1 px-2 text-[12px] rounded-full font-bold">
-              Stable Diffusion XL
+              Stable Diffusion Ultra
             </span>
 
             <h3 className="mt-1 text-[14px] text-center font-bold text-gray-300 w-full pt-2 border-2 p-2 rounded-lg border-purple-400">

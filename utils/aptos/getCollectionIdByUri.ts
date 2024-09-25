@@ -86,8 +86,7 @@ export async function getCollectionIdByUri(
 
     const collections = response.current_collection_ownership_v2_view;
 
-    console.log(collections);
-    
+    // console.log(collections);
 
     const collection = collections.find((collection: NftCollection) => {
       return collection.current_collection.uri === uniqueCid;

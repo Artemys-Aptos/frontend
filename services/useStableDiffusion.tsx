@@ -11,7 +11,7 @@ const useStableDiffusion = async (prompt, options = {}) => {
     const payload = {
       prompt: enhancedPrompt,
       negative_prompt: negativePrompt,
-      style_preset: 'neon-punk',
+
       output_format: 'webp',
       ...options,
     };
@@ -42,7 +42,7 @@ const useStableDiffusion = async (prompt, options = {}) => {
   };
 
   try {
-    const imagePromises = Array.from({ length: 1 }, () => generateImage());
+    const imagePromises = Array.from({ length: 2 }, () => generateImage());
     const images = await Promise.all(imagePromises);
 
     return {
