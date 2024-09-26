@@ -24,7 +24,6 @@ const useStableDiffusion = async (
       const payload = {
         prompt: enhancedPrompt,
         negative_prompt: negativePrompt,
-        style_preset: 'cinematic',
         output_format: 'webp',
         ...options,
       };
