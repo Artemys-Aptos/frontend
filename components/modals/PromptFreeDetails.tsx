@@ -1,17 +1,16 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 // @ts-nocheck
+import React, { Fragment, useState, useCallback, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { Fragment, useState, useCallback, useEffect } from 'react';
 import { FaRegCopy, FaWandMagicSparkles } from 'react-icons/fa6';
-import { BsFillPatchQuestionFill } from 'react-icons/bs';
 import { RiCloseCircleLine } from 'react-icons/ri';
 import { FiDownload } from 'react-icons/fi';
 import { MdOutlineShare } from 'react-icons/md';
 import Link from 'next/link';
-import FullscreenImageModal from './FullscreenImageModal';
-import { formatAddress } from '@/utils/formatAddress';
 import axios from 'axios';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import FullscreenImageModal from './FullscreenImageModal';
+import { formatAddress } from '@/utils/formatAddress';
 
 const PromptFreeDetails = ({
   openMintModal,
@@ -25,6 +24,7 @@ const PromptFreeDetails = ({
   const [isFullscreenModalOpen, setIsFullscreenModalOpen] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowProcessing, setIsFollowProcessing] = useState(false);
+  const [displayFollowing, setDisplayFollowing] = useState(false);
   const { account } = useWallet();
 
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -57,26 +57,31 @@ const PromptFreeDetails = ({
   const handleFollowClick = async () => {
     if (!account?.address || isFollowProcessing) return;
 
-    setIsFollowProcessing(true);
-    try {
-      const response = await axios.post(
-        `${baseUrl}/socialfeed/follow-creator/`,
-        null,
-        {
-          params: {
-            follower_account: account.address,
-            creator_account: creator,
-          },
-        }
-      );
+    if (isFollowing) {
+      setDisplayFollowing(!displayFollowing);
+    } else {
+      setIsFollowProcessing(true);
+      try {
+        const response = await axios.post(
+          `${baseUrl}/socialfeed/follow-creator/`,
+          null,
+          {
+            params: {
+              follower_account: account.address,
+              creator_account: creator,
+            },
+          }
+        );
 
-      if (response.status === 200) {
-        setIsFollowing(!isFollowing);
+        if (response.status === 200) {
+          setIsFollowing(true);
+          setDisplayFollowing(true);
+        }
+      } catch (error) {
+        console.error('Error following creator:', error);
+      } finally {
+        setIsFollowProcessing(false);
       }
-    } catch (error) {
-      console.error('Error following/unfollowing creator:', error);
-    } finally {
-      setIsFollowProcessing(false);
     }
   };
 
@@ -94,15 +99,19 @@ const PromptFreeDetails = ({
           }
         );
 
-        const followingList = response.data.following || [];
-        setIsFollowing(followingList.includes(creator));
+        const followingList = response.data.following_with_top_prompts || [];
+        const isCurrentlyFollowing = followingList.some(
+          (item) => item.creator_account === creator
+        );
+        setIsFollowing(isCurrentlyFollowing);
+        setDisplayFollowing(isCurrentlyFollowing);
       } catch (error) {
         console.error('Error checking follow status:', error);
       }
     };
 
     checkFollowStatus();
-  }, [account?.address, creator]);
+  }, [account?.address, creator, baseUrl]);
 
   return (
     <>
@@ -130,7 +139,7 @@ const PromptFreeDetails = ({
               aria-hidden="true"
             />
 
-            <div className="flex min-h-full  items-center justify-center p-2 text-center pt-6">
+            <div className="flex min-h-full items-center justify-center p-2 text-center pt-6">
               <Transition.Child
                 as={Fragment}
                 enter="ease-out duration-300"
@@ -140,17 +149,17 @@ const PromptFreeDetails = ({
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-[899px]  transform overflow-hidden rounded-lg py-3 bg-[#1a1919c5] border border-gray-800 p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-[899px] transform overflow-hidden rounded-lg py-3 bg-[#1a1919c5] border border-gray-800 p-6 text-left align-middle shadow-xl transition-all">
                   <div className="mt-4 flex w-full text-center justify-center">
                     <div className="w-[100%]">
                       <img
                         src={image}
                         alt=""
-                        className="rounded-xl w-[1024px] h-[800px]  object-cover cursor-pointer"
+                        className="rounded-xl w-[1024px] h-[800px] object-cover cursor-pointer"
                         onClick={handleImageClick}
                       />
                       <div className="pt-2 text-start text-white">
-                        <div className="pt-1 ml-[10px] w-[100%] text-sm flex justify-center gap-3  ">
+                        <div className="pt-1 ml-[10px] w-[100%] text-sm flex justify-center gap-3">
                           <span className="p-2 mb-2 border-[4px] rounded-lg border-[#292828] w-[40%] flex items-center justify-center gap-1 cursor-pointer">
                             <FiDownload className="text-lg" />
                             Download
@@ -187,7 +196,7 @@ const PromptFreeDetails = ({
                         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                         <span
                           className={`border ${
-                            isFollowing
+                            displayFollowing
                               ? 'bg-gray-700 text-white'
                               : 'border-gray-200 text-gray-200'
                           } p-[2px] rounded-full text-xs px-3 cursor-pointer hover:opacity-80 ${
@@ -197,7 +206,7 @@ const PromptFreeDetails = ({
                           }`}
                           onClick={handleFollowClick}
                         >
-                          {isFollowing ? 'Following' : 'Follow'}
+                          {displayFollowing ? 'Following' : 'Follow'}
                         </span>
                       </div>
 
