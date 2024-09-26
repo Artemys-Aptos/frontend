@@ -3,9 +3,9 @@ import { Listbox, Transition } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
 
 const styles_preset = [
+  { name: 'Stable Image Ultra' },
+  { name: 'Stable Image Core' },
   { name: 'Stable Diffusion XL' },
-  { name: 'DallE-3' },
-  { name: 'DallE-2' },
   { name: 'Waifu Diffusion' },
   { name: 'Dreamshaper V7' },
 ];

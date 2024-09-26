@@ -48,9 +48,7 @@ const GenerateImage = () => {
       const promptToUse = editablePromptInput || receivedPrompt;
       setPrompts(promptToUse);
 
-      const data = await useStableDiffusion(promptToUse, {
-        aspect_ratio: '1:1',
-      });
+      const data = await useStableDiffusion(promptToUse, {});
 
       if (data && data.artifacts) {
         const imageObjects: ImageObject[] = data.artifacts.map((artifact) => ({

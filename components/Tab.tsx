@@ -8,14 +8,14 @@ const Tab = () => {
     switch (activeTab) {
       case 'Generation Output':
         return <div>Generation Output</div>;
-      case 'Image Enhancement':
-        return <div>Image Enhancement</div>;
-      case 'History':
-        return (
-          <div>
-            Image To Image <span>coming</span>
-          </div>
-        );
+      // case 'Image Enhancement':
+      //   return <div>Image Enhancement</div>;
+      // case 'History':
+      //   return (
+      //     <div>
+      //       Image To Image <span>coming</span>
+      //     </div>
+      //   );
       default:
         return null;
     }
@@ -24,21 +24,19 @@ const Tab = () => {
   return (
     <div>
       <div className="flex justify-start pl-[285px] mt-[20px] space-x-4 mb-4 border-b-[1px] border-gray-500 w-full h-full">
-        {['Generation Output', 'Image Enhancement', 'Image To Image'].map(
-          (tab) => (
-            <button
-              key={tab}
-              className={`px-4 py-2  ${
-                activeTab === tab
-                  ? 'border-[#d536f5] border-b-[2px] text-white rounded-lg'
-                  : ' text-[#6C6E73] font-bold'
-              }`}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab}
-            </button>
-          )
-        )}
+        {['Generation Output'].map((tab) => (
+          <button
+            key={tab}
+            className={`px-4 py-2  ${
+              activeTab === tab
+                ? 'border-[#d536f5] border-b-[2px] text-white rounded-lg'
+                : ' text-[#6C6E73] font-bold'
+            }`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
       <TabContent activeTab={activeTab} />
     </div>
