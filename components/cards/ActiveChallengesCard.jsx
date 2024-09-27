@@ -119,9 +119,6 @@ const ActiveChallengesCard = ({
               View Submissions
             </button>
           </div>
-          <p className="mt-4 font-bold text-sm text-secondary-white text-center border-purple-400 border-2 mx-2 p-1 rounded-xl">
-            {error ? `Error: ${error}` : `${timeLeft} left to submit`}
-          </p>
         </Link>
       </div>
     </div>
