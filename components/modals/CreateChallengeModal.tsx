@@ -178,10 +178,6 @@ const CreateChallengeModal = ({ openMintModal, handleOnClose }) => {
     }
 
     try {
-      // const createNotification = toast.loading(
-      //   'Please wait! Creating your challenge'
-      // );
-
       const formData = new FormData();
       formData.append('file', imageFile);
       const imagePinataResponse = await axios.post(pinataEndpoint, formData, {

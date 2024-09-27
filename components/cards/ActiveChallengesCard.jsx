@@ -32,11 +32,6 @@ const ActiveChallengesCard = ({
         adjustedStartDate.getTime() + durationInSeconds * 1000
       );
 
-      console.log('Start time:', startDate.toUTCString());
-      console.log('Adjusted start time:', adjustedStartDate.toUTCString());
-      console.log('Current time:', now.toUTCString());
-      console.log('End time:', endDate.toUTCString());
-
       if (now >= endDate) {
         return 'Challenge Ended';
       }
@@ -69,7 +64,7 @@ const ActiveChallengesCard = ({
 
   return (
     <div className="w-[328px] h-[444px] cursor-pointer text-gray-300">
-      <div className="shadow p-5 rounded-lg border-t-4 border-b-4 border-r-[1px] border-l-[1px] border-purple-900 bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 rex">
+      <div className="shadow p-5 rounded-lg border-t-4 border-b-4 border-r-[1px] border-l-[1px] border-purple-900 bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 rex h-[420px] flex flex-col justify-between">
         <img
           src={getImageUrl(ipfsData.image)}
           alt={ipfsData.name || 'Challenge'}
@@ -80,7 +75,7 @@ const ActiveChallengesCard = ({
           Prize: <span className="text-gray-300">{prize} APT </span>
         </span>
 
-        <p className="mt-4 text-2xl text-secondary-white text-center font-medium bg-transparent">
+        <p className="mt-2 text-2xl text-secondary-white text-center font-medium bg-transparent max-w-[280px] mx-auto truncate">
           {ipfsData.name}
         </p>
         <p className="mt-4 font-bold text-sm text-secondary-white text-center border-purple-400 border-2 mx-2 p-1 rounded-xl">
@@ -93,7 +88,10 @@ const ActiveChallengesCard = ({
           </p>
         </div>
 
-        <Link href="/submissions/[id]" as={`/submissions/${id}`}>
+        <Link
+          href="/submissions/[id]"
+          as={`/submissions/${id}?ipfsUri=${encodeURIComponent(ipfsUrl)}`}
+        >
           <div className="mt-4 px-[50px]">
             <button className="border-gray-400 border-2 hover:opacity-80 px-3 py-2 rounded-lg w-full text-white">
               View Submissions

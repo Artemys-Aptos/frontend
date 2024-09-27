@@ -10,6 +10,8 @@ interface ImageContextType {
   setImages: React.Dispatch<React.SetStateAction<ImageObject[]>>;
   prompts: string;
   setPrompts: React.Dispatch<React.SetStateAction<string>>;
+  challengeDescription: string;
+  setChallengeDescription: React.Dispatch<React.SetStateAction<string>>;
   submissionDuration: string;
   setSubmissionDuration: React.Dispatch<React.SetStateAction<string>>;
   submissionStartTime: string;
@@ -36,6 +38,7 @@ export const ImageProvider: React.FC<ImageProviderProps> = ({ children }) => {
   const [images, setImages] = useState<ImageObject[]>([]);
   const [prompts, setPrompts] = useState<string>('');
   const [submissionDuration, setSubmissionDuration] = useState<string>('');
+  const [challengeDescription, setChallengeDescription] = useState<string>('');
   const [submissionStartTime, setSubmissionStartTime] = useState<string>('');
   const [submissionHeaderIpfsUri, SetSubmissionHeaderIpfsUri] =
     useState<string>('');
@@ -53,6 +56,8 @@ export const ImageProvider: React.FC<ImageProviderProps> = ({ children }) => {
         setSubmissionStartTime,
         submissionHeaderIpfsUri,
         SetSubmissionHeaderIpfsUri,
+        challengeDescription,
+        setChallengeDescription,
       }}
     >
       {children}

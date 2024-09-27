@@ -117,6 +117,7 @@ const MakeSubmissionModal = ({ openModal, handleOnClose }) => {
     } finally {
       setIsSubmitting(false);
       handleOnClose();
+      location.reload();
     }
   };
 

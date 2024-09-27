@@ -25,8 +25,6 @@ const ActiveChallenges = () => {
     queryFn: fetchActiveChallenges,
   });
 
-  console.log('active', activeChallenges);
-
   if (error) {
     return <div>Error fetching challenges: {error.message}</div>;
   }

@@ -1,72 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { BsSearch } from 'react-icons/bs';
+import { useRouter } from 'next/router';
+import { useImages } from '@/context/ImageContext';
+import useIpfsData from '@/utils/useIpfsData';
 import SearchSubmission from './SearchSubmission';
 import MakeSubmissionModal from './modals/MakeSubmissionModal';
-import { calculateTimeLeft } from '@/utils/countdownTimer';
-import { useImages } from '@/context/ImageContext';
-import { ethers } from 'ethers';
-import useIpfsData from '@/utils/useIpfsData';
 
-interface SubmissionsHeaderProps {
-  ipfsUri: string;
-}
+const SubmissionsHeader = () => {
+  const [openModal, setOpenModal] = useState(false);
+  const router = useRouter();
+  const { ipfsUri } = router.query;
+  const { setChallengeDescription, challengeDescription } = useImages();
+  const [isLoading, setIsLoading] = useState(true);
 
-interface Challenge {
-  id: string;
-  ipfsUrl: string;
-  duration: number;
-  startTime: number;
-  isActive: boolean;
-  winner: string;
-  numberOfSubmissions: number;
-}
+  const ipfsData = useIpfsData(Array.isArray(ipfsUri) ? ipfsUri[0] : ipfsUri);
 
-const SubmissionsHeader: React.FC<SubmissionsHeaderProps> = ({ ipfsUri }) => {
-  const [openModal, setOpenModal] = useState<boolean>(false);
-  const { submissionHeaderIpfsUri } = useImages();
-  const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  useEffect(() => {
+    if (router.isReady) {
+      setIsLoading(false);
+    }
+  }, [router.isReady]);
 
-  const handleOpenModal = () => {
-    setOpenModal(true);
-  };
+  useEffect(() => {
+    if (ipfsData?.description) {
+      setChallengeDescription(ipfsData.description);
+    }
+  }, [ipfsData, setChallengeDescription]);
 
-  const ipfsData = useIpfsData(submissionHeaderIpfsUri);
-
-  console.log('IPFS data:', ipfsData);
-  console.log('Active challenges:', activeChallenges[0]);
-
-  //   console.log('Active challenges:', activeChallenges[0].ipfsUrl);
+  if (isLoading) {
+    return <div className="text-white">Loading...</div>;
+  }
 
   return (
     <>
-      <div className="submission-header-bg text-white text-start mb-6 py-10 h-[240px] ml-[250px] ">
-        <h1 className="text-3xl py-1 pt-2 font-bold bg-transparent ml-10 ">
-          Make a submission to {ipfsData?.name}
+      <div className="submission-header-bg text-white text-start mb-6 py-10 h-[240px] ml-[250px]">
+        <h1 className="text-3xl py-1 pt-2 font-bold bg-transparent ml-10">
+          Make a submission to {ipfsData?.name || 'Challenge'}
         </h1>
-        <p className="pb-6 pt-4 italic bg-transparent text-start text-xl w-[60%] ml-10 ">
+        <p className="pb-6 pt-4 italic bg-transparent text-start text-xl w-[60%] ml-10">
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 font-bold pr-1">
             Challenge Description:
           </span>
-          {ipfsData?.description}
-          <br />
-          <br />
-          {/* <span className="text-lg mt-6 font-bold">
-            Time Left: 00d:01h:22m:56s
-          </span> */}
+          {challengeDescription ||
+            ipfsData?.description ||
+            'No description available'}
         </p>
       </div>
 
-      <div className="ml-[220px] mb-6 flex items-center text-white mr-[40px]">
+      <div className="ml-[210px] mb-6 flex items-center text-white mr-[40px]">
         <SearchSubmission />
-        <div>
-          <button
-            className="text-white  bg-gradient-to-r from-purple-700 via-purple-500 to-pink-500 mt-3 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300  rounded-lg text-sm font-bold w-[100px] sm:w-[200px] px-8 py-2 text-center dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-800"
-            onClick={handleOpenModal}
-          >
-            Submit to Challenge
-          </button>
-        </div>
+        <button
+          className="text-white bg-gradient-to-r from-purple-700 via-purple-500 to-pink-500 mt-3 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300 rounded-lg text-sm font-bold w-[100px] sm:w-[200px] px-4 py-2 text-center dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-800"
+          onClick={() => setOpenModal(true)}
+        >
+          Submit to Challenge
+        </button>
       </div>
 
       <MakeSubmissionModal
