@@ -1,8 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import useIpfsData from '@/utils/useIpfsData';
 import { useImages } from '@/context/ImageContext';
-import useRobustCountdown from '@/utils/useEfficientCountdown';
 
 const ActiveChallengesCard = ({
   id,
@@ -13,13 +12,43 @@ const ActiveChallengesCard = ({
   prize,
   numberOfSubmissions,
 }) => {
+  const [timeLeft, setTimeLeft] = useState('');
   const ipfsData = useIpfsData(ipfsUrl);
   const { SetSubmissionHeaderIpfsUri } = useImages();
-  const timeLeft = useRobustCountdown(startTime, duration); 
 
   useEffect(() => {
     SetSubmissionHeaderIpfsUri(ipfsUrl);
-  }, [ipfsUrl, SetSubmissionHeaderIpfsUri]);
+    const calculateTimeLeft = () => {
+      const startDate = new Date(startTime);
+      const now = new Date();
+      const durationInSeconds = parseInt(duration.split(' ')[0]);
+      const endDate = new Date(startDate.getTime() + durationInSeconds * 1000);
+
+      console.log('Start time:', startDate);
+      console.log('Current time:', now);
+      console.log('End time:', endDate);
+
+      if (now >= endDate) {
+        console.log('Challenge has ended');
+        return 'Challenge Ended';
+      }
+
+      const difference = endDate - now;
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+
+      console.log('Time left:', `${days}d ${hours}h ${minutes}m ${seconds}s`);
+      return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    };
+
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [startTime, duration]);
 
   const getImageUrl = (ipfsImageUrl) => {
     if (ipfsImageUrl && ipfsImageUrl.trim() !== '') {
@@ -48,7 +77,7 @@ const ActiveChallengesCard = ({
           {ipfsData.name}
         </p>
         <p className="mt-4 font-bold text-sm text-secondary-white text-center border-purple-400 border-2 mx-2 p-1 rounded-xl">
-          {timeLeft}
+          {timeLeft} left to submit
         </p>
 
         <div>
