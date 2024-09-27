@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import Link from 'next/link';
 import useIpfsData from '@/utils/useIpfsData';
 import { useImages } from '@/context/ImageContext';
-import useEfficientCountdown from '@/utils/useEfficientCountdown';
+import useRobustCountdown from '@/utils/useEfficientCountdown';
 
 const ActiveChallengesCard = ({
   id,
@@ -15,7 +15,7 @@ const ActiveChallengesCard = ({
 }) => {
   const ipfsData = useIpfsData(ipfsUrl);
   const { SetSubmissionHeaderIpfsUri } = useImages();
-  const timeLeft = useEfficientCountdown(startTime, duration);
+  const timeLeft = useRobustCountdown(startTime, duration); 
 
   useEffect(() => {
     SetSubmissionHeaderIpfsUri(ipfsUrl);
@@ -48,7 +48,7 @@ const ActiveChallengesCard = ({
           {ipfsData.name}
         </p>
         <p className="mt-4 font-bold text-sm text-secondary-white text-center border-purple-400 border-2 mx-2 p-1 rounded-xl">
-          {timeLeft} left to submit
+          {timeLeft}
         </p>
 
         <div>

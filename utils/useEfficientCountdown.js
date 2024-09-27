@@ -1,41 +1,40 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
-const useEfficientCountdown = (startTime, duration) => {
+const useRobustCountdown = (startTimeISO, durationString) => {
   const [timeLeft, setTimeLeft] = useState('');
-  const requestRef = useRef();
-  const previousTimeRef = useRef();
 
   useEffect(() => {
-    const startDate = new Date(startTime);
-    const durationInSeconds = parseInt(duration.split(' ')[0]);
-    const endDate = new Date(startDate.getTime() + durationInSeconds * 1000);
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const startTime = new Date(startTimeISO);
+      const durationInSeconds = parseInt(durationString.split(' ')[0]);
+      const endTime = new Date(startTime.getTime() + durationInSeconds * 1000);
 
-    const animate = (time) => {
-      if (previousTimeRef.current !== undefined) {
-        const now = new Date();
-
-        if (now >= endDate) {
-          setTimeLeft('Challenge Ended');
-          return;
-        }
-
-        const difference = endDate - now;
-        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-        const minutes = Math.floor((difference / 1000 / 60) % 60);
-        const seconds = Math.floor((difference / 1000) % 60);
-
-        setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+      if (now >= endTime) {
+        return 'Challenge Ended';
       }
-      previousTimeRef.current = time;
-      requestRef.current = requestAnimationFrame(animate);
+
+      const difference = endTime.getTime() - now.getTime();
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+
+      return `${days}d ${hours}h ${minutes}m ${seconds}s`;
     };
 
-    requestRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(requestRef.current);
-  }, [startTime, duration]);
+    const updateCountdown = () => {
+      setTimeLeft(calculateTimeLeft());
+    };
+
+    updateCountdown();
+
+    const timerId = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(timerId);
+  }, [startTimeISO, durationString]);
 
   return timeLeft;
 };
 
-export default useEfficientCountdown;
+export default useRobustCountdown;
