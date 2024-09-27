@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import useIpfsData from '@/utils/useIpfsData';
 import { useImages } from '@/context/ImageContext';
+import useEfficientCountdown from '@/utils/useEfficientCountdown';
 
 const ActiveChallengesCard = ({
   id,
@@ -12,37 +13,13 @@ const ActiveChallengesCard = ({
   prize,
   numberOfSubmissions,
 }) => {
-  const [timeLeft, setTimeLeft] = useState('');
   const ipfsData = useIpfsData(ipfsUrl);
   const { SetSubmissionHeaderIpfsUri } = useImages();
+  const timeLeft = useEfficientCountdown(startTime, duration);
 
   useEffect(() => {
     SetSubmissionHeaderIpfsUri(ipfsUrl);
-    const calculateTimeLeft = () => {
-      const startDate = new Date(startTime);
-      const now = new Date();
-      const durationInSeconds = parseInt(duration.split(' ')[0]);
-      const endDate = new Date(startDate.getTime() + durationInSeconds * 1000);
-
-      if (now >= endDate) {
-        return 'Challenge Ended';
-      }
-
-      const difference = endDate - now;
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((difference / 1000 / 60) % 60);
-      const seconds = Math.floor((difference / 1000) % 60);
-
-      return `${days}d ${hours}h ${minutes}m ${seconds}s`;
-    };
-
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [startTime, duration]);
+  }, [ipfsUrl, SetSubmissionHeaderIpfsUri]);
 
   const getImageUrl = (ipfsImageUrl) => {
     if (ipfsImageUrl && ipfsImageUrl.trim() !== '') {

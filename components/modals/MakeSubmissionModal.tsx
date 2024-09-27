@@ -290,7 +290,7 @@ const MakeSubmissionModal = ({ openModal, handleOnClose }) => {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-[70%]  transform overflow-hidden rounded-lg pb-3 bg-[#00000091] border border-gray-800  text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-[80%]  transform overflow-hidden rounded-lg pb-3 bg-[#00000091] border border-gray-800  text-left align-middle shadow-xl transition-all">
                   <div className="relative h-[120px] w-full">
                     <img
                       src="/warrior.webp"
@@ -327,7 +327,7 @@ const MakeSubmissionModal = ({ openModal, handleOnClose }) => {
                     &nbsp;&nbsp;&nbsp;&nbsp;
                     <div className="text-white w-[50%]">
                       <form
-                        className="ml-[40px] w-[300px] mt-6"
+                        className="ml-[10px] w-[300px] mt-6"
                         onSubmit={submitEntry}
                       >
                         <div className="relative z-0 w-full mb-6 group">
@@ -349,7 +349,7 @@ const MakeSubmissionModal = ({ openModal, handleOnClose }) => {
                         <div className="w-full mb-6">
                           <textarea
                             name="text"
-                            className="w-[400px] h-[200px] p-2 bg-transparent border border-gray-600 placeholder:text-sm placeholder:text-gray-600 rounded-md placeholder:p-2 text-sm outline-none focus:outline-none focus:ring-0"
+                            className="w-[360px] h-[200px] p-2 bg-transparent border border-gray-600 placeholder:text-sm placeholder:text-gray-600 rounded-md placeholder:p-2 text-sm outline-none focus:outline-none focus:ring-0"
                             placeholder="Add your generative prompt to create entry image"
                             required
                             onChange={(e) =>

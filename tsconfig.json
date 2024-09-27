@@ -16,6 +16,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "components/ai-params/Tags.jsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "components/ai-params/Tags.jsx", "utils/useEfficientCountdown.js"],
   "exclude": ["node_modules"]
 }
