@@ -28,6 +28,10 @@ const CompletedChallenges = () => {
     return <div>Error fetching completed challenges: {error.message}</div>;
   }
 
+  const reversedChallenges = completedChallenges
+    ? [...completedChallenges].reverse()
+    : [];
+
   return (
     <div className="flex justify-start items-center">
       <div className="text-white w-full grid grid-cols-3 md:grid-cols-3 gap-[60px] mx-[20px]">
@@ -38,7 +42,7 @@ const CompletedChallenges = () => {
             <ChallengesCardSkeleton />
           </React.Fragment>
         ) : (
-          completedChallenges.map((challenge) => (
+          reversedChallenges.map((challenge) => (
             <CompletedChallengesCard
               key={challenge.challenge_id}
               id={challenge.challenge_id}
