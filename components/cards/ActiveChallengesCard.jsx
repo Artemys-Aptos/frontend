@@ -18,29 +18,56 @@ const ActiveChallengesCard = ({
 
   useEffect(() => {
     SetSubmissionHeaderIpfsUri(ipfsUrl);
+    console.log('Raw startTime:', startTime);
+    console.log('Raw duration:', duration);
+
     const calculateTimeLeft = () => {
-      const startDate = new Date(startTime);
-      const now = new Date();
-      const durationInSeconds = parseInt(duration.split(' ')[0]);
-      const endDate = new Date(startDate.getTime() + durationInSeconds * 1000);
+      try {
+        // Attempt to parse startTime
+        let startDate;
+        if (typeof startTime === 'string') {
+          // If startTime is a string, try parsing it
+          startDate = new Date(startTime);
+        } else if (startTime instanceof Date) {
+          // If startTime is already a Date object, use it as is
+          startDate = startTime;
+        } else {
+          throw new Error('Invalid startTime format');
+        }
 
-      console.log('Start time:', startDate);
-      console.log('Current time:', now);
-      console.log('End time:', endDate);
+        if (isNaN(startDate.getTime())) {
+          throw new Error('Invalid startTime');
+        }
 
-      if (now >= endDate) {
-        console.log('Challenge has ended');
-        return 'Challenge Ended';
+        const now = new Date();
+        const durationInSeconds = parseInt(duration.split(' ')[0]);
+        const endDate = new Date(
+          startDate.getTime() + durationInSeconds * 1000
+        );
+
+        console.log('Start time:', startDate.toUTCString());
+        console.log('Current time:', now.toUTCString());
+        console.log('End time:', endDate.toUTCString());
+
+        if (now >= endDate) {
+          console.log('Challenge has ended');
+          return 'Challenge Ended';
+        }
+
+        const difference = endDate - now;
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((difference / 1000 / 60) % 60);
+        const seconds = Math.floor((difference / 1000) % 60);
+
+        const timeLeftString = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        console.log('Time left:', timeLeftString);
+        return timeLeftString;
+      } catch (err) {
+        console.error('Error calculating time left:', err.message);
+        setError(err.message);
+        return 'Error calculating time';
       }
-
-      const difference = endDate - now;
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((difference / 1000 / 60) % 60);
-      const seconds = Math.floor((difference / 1000) % 60);
-
-      console.log('Time left:', `${days}d ${hours}h ${minutes}m ${seconds}s`);
-      return `${days}d ${hours}h ${minutes}m ${seconds}s`;
     };
 
     const timer = setInterval(() => {
@@ -92,6 +119,9 @@ const ActiveChallengesCard = ({
               View Submissions
             </button>
           </div>
+          <p className="mt-4 font-bold text-sm text-secondary-white text-center border-purple-400 border-2 mx-2 p-1 rounded-xl">
+            {error ? `Error: ${error}` : `${timeLeft} left to submit`}
+          </p>
         </Link>
       </div>
     </div>
