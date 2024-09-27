@@ -17,6 +17,7 @@ import { createPromptCollectionSponsored } from '@/utils/entry-functions/create_
 import { aptosClient } from '@/utils/aptos/aptosClient';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { AptosClient, TxnBuilderTypes, BCS, HexString, Provider } from 'aptos';
+import { ClipLoader } from 'react-spinners';
 
 const CreateNftModal = ({ openModal, handleOnClose, image }) => {
   const { signAndSubmitTransaction, account, network, wallet } = useWallet();
@@ -40,6 +41,7 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
   const [txHash, setTxHash] = useState('');
   const [isSwitchEnabled, setIsSwitchEnabled] = useState(false);
   const [completedMint, setCompletedMint] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const pinataApiKey = process.env.NEXT_PUBLIC_PINATA_API_KEY;
   const pinataSecretApiKey = process.env.NEXT_PUBLIC_PINATA_SECRET_API_KEY;
@@ -79,9 +81,7 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
     setAttr(updatedAttr);
 
     try {
-      const mintNotification = toast.loading(
-        'Please wait! Tokenizing your Prompt NFT'
-      );
+      setLoading(true);
 
       const formData = new FormData();
       formData.append('file', blob);
@@ -222,13 +222,6 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
         }
       }
 
-      toast.update(mintNotification, {
-        render: 'Creation Completed Successfully',
-        type: 'success',
-        isLoading: false,
-        autoClose: 7000,
-      });
-
       setPromptNftName('');
       setPromptNftDescription('');
       setMaxSupply(1);
@@ -239,12 +232,7 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
       console.error('Error in the overall NFT creation process:', error);
       toast.error(`Error: ${error.message}`);
     } finally {
-      // toast.update(mintNotification, {
-      //   render: '',
-      //   type: 'success',
-      //   isLoading: false,
-      //   autoClose: 7000,
-      // });
+      setLoading(false);
     }
   };
 
@@ -281,9 +269,7 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
     setAttr(updatedAttr);
 
     try {
-      // const mintNotification = toast.loading(
-      //   'Please wait! Tokenizing your Prompt NFT'
-      // );
+      setLoading(true);
 
       const formData = new FormData();
       formData.append('file', blob);
@@ -396,13 +382,6 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
           );
         }
 
-        toast.update(mintNotification, {
-          render: 'Creation Completed Successfully',
-          type: 'success',
-          isLoading: false,
-          autoClose: 7000,
-        });
-
         setPromptNftName('');
         setPromptNftDescription('');
         setMaxSupply(1);
@@ -415,6 +394,8 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
     } catch (error) {
       console.error('Error in the overall NFT creation process:', error);
       toast.error(`Error: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -590,9 +571,9 @@ const CreateNftModal = ({ openModal, handleOnClose, image }) => {
                           <button
                             type="submit"
                             onClick={appropriateCreateFunction}
-                            className="text-white  bg-gradient-to-r from-purple-700 via-purple-500 to-pink-500 mt-3 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300  rounded-lg text-sm font-bold w-[140px] sm:w-auto px-8 py-2 text-center dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-800"
+                            className="text-white  bg-gradient-to-r from-purple-700 via-purple-500 to-pink-500 mt-3 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300  rounded-lg text-sm font-bold w-[140px] h-[40px]  px-8 py-2 text-center dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-800"
                           >
-                            Create
+                            {loading ? <ClipLoader color='#fff' size={22}/> : ' Create'}
                           </button>
                         </form>
                       </div>
