@@ -9,6 +9,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import useStableDiffusion from '@/services/useStableDiffusion';
 import Tags from './ai-params/Tags';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 
 interface ImageObject {
   id: number;
@@ -17,6 +18,7 @@ interface ImageObject {
 
 const GenerateImage = () => {
   const { setImages, setPrompts } = useImages();
+  const { signAndSubmitTransaction, account, network, wallet } = useWallet();
   const [editablePromptInput, setEditablePromptInput] = useState<string>('');
   const [receivedPrompt, setReceivedPrompt] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -24,6 +26,20 @@ const GenerateImage = () => {
 
   const handleOpenModal = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+
+    if (!account || !network || !wallet) {
+      toast.error('Please connect your wallet to generate images.', {
+        position: 'top-center',
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+      return;
+    }
+
     setOpenModal(true);
   };
 
@@ -41,6 +57,19 @@ const GenerateImage = () => {
     e: React.MouseEvent<HTMLButtonElement>
   ) => {
     e.preventDefault();
+
+    if (!account || !network || !wallet) {
+      toast.error('Please connect your wallet to generate images.', {
+        position: 'top-center',
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+      return;
+    }
 
     setIsGenerating(true);
 
