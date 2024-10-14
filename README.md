@@ -1,7 +1,11 @@
 <div align="">
     <img src="https://img.shields.io/badge/-TypeScript-black?style=for-the-badge&logoColor=white&logo=typescript&color=3178C6" alt="typescript" />
     <img src="https://img.shields.io/badge/-Next_JS-black?style=for-the-badge&logoColor=white&logo=nextdotjs&color=000000" alt="nextdotjs" />
-</div>
+</div
+
+## Deployed Module Address (Aptos Testnet):
+- [Prompt Marketplace](https://explorer.aptoslabs.com/object/0xcaf438fc7f38cb9f8b5fe423c0a5875b3bbb30b30cf83b0194d4f17d856eb345?network=testnet)
+- [Artemys Challenges](https://explorer.aptoslabs.com/object/0xbb455c6ac85d5cecf812ac09b5275db20cdb9228f401b573c085d92c2b9fe2a5?network=testnet)
 
 ## Artemys AI
 
